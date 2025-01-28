@@ -65,11 +65,7 @@ esphome:
   project:
     name: "${project_name}"
     version: "${project_version}"
-  
-  dashboard_import:
-  package_import_url: github://Smartpadza/Device_Configs/smartpad-em32-smart-plug.yaml
-  import_full_config: true # or fale
-  
+    
   #Configuration to allow selection of Power restore Mode
   on_boot:
     - priority: 600
@@ -107,6 +103,9 @@ select:
       then:
         - lambda: |-
             id(restore_mode)=i+1;
+dashboard_import:
+  package_import_url: github://Smartpadza/Device_Configs/smartpad-em32-smart-plug.yaml
+  import_full_config: false # or true
 globals:
   - id: restore_mode
     type: int
