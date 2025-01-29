@@ -45,6 +45,7 @@ substitutions:
   current_resistor: "0.0009"
   #Currnt Multiplier Starting Value
   current_multiply: "1.5"
+
 ########################## End of Substitutions #########################
 
 #Board Configuration
@@ -68,27 +69,31 @@ esphome:
     
   #Configuration to allow selection of Power restore Mode
   on_boot:
-    - priority: 600
-      then:
-        - select.set_index:
-            id: power_mode
-            index: !lambda |-
+  - priority: 600
+    then:
+      - select.set_index:
+          id: power_mode
+          index: !lambda |-
                     return id(restore_mode)-1;
-        - lambda: |-
-              switch(id(restore_mode))
-              {
-              case 1:{
-                      id(relay).turn_off();
-                      break;
-                            }
-              case 2:{
-                      id(relay).turn_on();
-                      break;
-                            }
-              default:{
-                      break;
-                            }
-              }
+      - lambda: |-
+          switch(id(restore_mode))
+          {
+          case 1:{
+                  id(relay).turn_off();
+                  break;
+                        }
+          case 2:{
+                  id(relay).turn_on();
+                  break;
+                        }
+          default:{
+                  break;
+                        }
+          }
+          // Apply restored values to HLW8012 sensor
+          id(power_sensor).set_voltage_divider(id(voltage_divider_number).state);
+          id(power_sensor).set_current_resistor(id(current_resistor_number).state);
+          id(power_sensor).setup();
 select:
   - platform: template
     name: "Power On State"
@@ -96,9 +101,9 @@ select:
     optimistic: true
     icon: mdi:electric-switch
     options:
-      - Always Off
-      - Always On
-      - Restore Power Off State
+      - Always Off       # index 0 → restore_mode 0
+      - Always On        # index 1 → restore_mode 1
+      - Restore Previous State  # index 2 → restore_mode 2
     on_value:
       then:
         - lambda: |-
@@ -106,16 +111,28 @@ select:
 dashboard_import:
   package_import_url: github://Smartpadza/Device_Configs/smartpad-em32-smart-plug.yaml
   import_full_config: false # or true
+
 globals:
   - id: restore_mode
     type: int
     restore_value: yes
-    initial_value: "2"      # 0 = Always_Off. 1 = Restore_Power_Off. 2 = Always_On.
+    initial_value: "2"
 
   - id: total_energy
     type: float
     restore_value: yes
     initial_value: '0.0'
+
+  - id: overload_count
+    type: int
+    restore_value: no
+    initial_value: "0"
+
+  # Add global variable for current_multiply
+  - id: current_multiply
+    type: float
+    restore_value: yes
+    initial_value: ${current_multiply}
 
 #prevent rapid changes to a component from being quickly written to the flash and wearing it out
 preferences:
@@ -194,6 +211,7 @@ switch:
 #HLW8012 Power Monitoring Configuration and Calibration Configuration
 number:
   - platform: template
+    id: voltage_divider_number  # Add ID for reference
     name: "Voltage Divider"
     optimistic: true
     min_value: 1
@@ -210,7 +228,9 @@ number:
         - lambda: |-
             id(power_sensor).set_voltage_divider(x);
             id(power_sensor).setup();
+
   - platform: template
+    id: current_resistor_number  # Add ID for reference
     name: "Current Resistor"
     optimistic: true
     min_value: 0
@@ -227,12 +247,31 @@ number:
         - lambda: |-
             id(power_sensor).set_current_resistor(x);
             id(power_sensor).setup();
+
+  # Add new number entity for current_multiply
+  - platform: template
+    name: "Current Multiplier"
+    id: current_multiply_number
+    optimistic: true
+    min_value: 0.1
+    max_value: 5.0
+    step: 0.1
+    initial_value: ${current_multiply}
+    restore_value: true
+    entity_category: config
+    disabled_by_default: true
+    mode: box
+    on_value:
+      then:
+        - lambda: |-
+            id(current_multiply) = x;
+
 #Sensor Configurations
 sensor:
   - platform: hlw8012
     id: power_sensor
-    current_resistor: ${current_resistor}
-    voltage_divider: ${voltage_divider}
+    current_resistor: ${current_resistor}  # Initial value from substitution
+    voltage_divider: ${voltage_divider}    # Initial value from substitution
     model: BL0937
     cf_pin: GPIO7
     cf1_pin: GPIO3
@@ -247,7 +286,7 @@ sensor:
     current:
       name: "Current"
       filters:
-        - multiply: ${current_multiply}
+        - multiply: !lambda 'return id(current_multiply);'  # Use global variable
     power:
       name: "Power"
       id: power_id
@@ -255,6 +294,10 @@ sensor:
       filters:
         - throttle_average: ${sensor_update_interval}
         - lambda: if (x < 3.0) return 0.0; else return x;    #For the chip will report less than 3w power when no load is connected
+      on_value_range:
+        - above: ${current_limit}
+          then:
+            - switch.turn_off: relay
     energy:
       name: "Energy"
       id: energy
@@ -276,15 +319,29 @@ sensor:
     id: wifi_signal_db
     update_interval: 60s
     entity_category: "diagnostic"
+    disabled_by_default: true
 
   - platform: copy
     source_id: wifi_signal_db
     name: "WiFi Signal Percent"
     filters:
-      - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
+      - lambda: |-
+          return (x > -50) ? 100 : 
+                 (x < -100) ? 0 : 
+                 2 * (x + 100);
     unit_of_measurement: "Signal %"
     entity_category: "diagnostic"
     device_class: ""
+ 
+# Added total energy persistence
+  - platform: total_daily_energy
+    name: "Total Energy"
+    power_id: power_id
+    filters:
+      - multiply: 0.001
+    unit_of_measurement: kWh
+    icon: mdi:lightning-bolt-circle
+    accuracy_decimals: 3
 
 #Diagnostic Data Sesnors    
 text_sensor:
@@ -368,3 +425,4 @@ time:
               - text_sensor.template.publish:
                   id: device_last_restart
                   state: !lambda 'return id(sntp_time).now().strftime("%a %d %b %Y - %I:%M:%S %p");'
+
