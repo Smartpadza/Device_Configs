@@ -342,7 +342,7 @@ sensor:
     unit_of_measurement: kWh
     icon: mdi:lightning-bolt-circle
     accuracy_decimals: 3
-
+  
 #Diagnostic Data Sesnors    
 text_sensor:
   - platform: wifi_info
@@ -365,6 +365,31 @@ text_sensor:
     id: device_last_restart
     icon: mdi:clock
     entity_category: diagnostic
+  #  Creates a sensor of the uptime of the device, in formatted days, hours, minutes and seconds
+  - platform: template
+    name: "Uptime"
+    entity_category: diagnostic
+    lambda: |-
+      int seconds = static_cast<int>(id(uptime_sensor).state);
+      int days = seconds / 86400;
+      seconds %= 86400;
+      int hours = seconds / 3600;
+      seconds %= 3600;
+      int minutes = seconds / 60;
+      seconds %= 60;
+
+      if (days > 3650) {
+        return {"Starting up"};
+      } else if (days > 0) {
+        return {str_sprintf("%dd %dh %dm %ds", days, hours, minutes, seconds)};
+      } else if (hours > 0) {
+        return {str_sprintf("%dh %dm %ds", hours, minutes, seconds)};
+      } else if (minutes > 0) {
+        return {str_sprintf("%dm %ds", minutes, seconds)};
+      } else {
+        return {str_sprintf("%ds", seconds)};
+      }
+    icon: mdi:clock-start
 
 #Button Configurations
 #Device Physical Button
@@ -425,4 +450,3 @@ time:
               - text_sensor.template.publish:
                   id: device_last_restart
                   state: !lambda 'return id(sntp_time).now().strftime("%a %d %b %Y - %I:%M:%S %p");'
-
