@@ -1,0 +1,461 @@
+substitutions:
+  # Default name
+  name: "moes-ufo-r2-rf"
+  # Default friendly name   
+  friendly_name: "Moes UFO R2 RF ESP Home"
+  # Allows ESP device to be automatically linked to an 'Area' in Home Assistant. Typically used for areas such as 'Lounge Room', 'Kitchen' etc  
+  room: ""
+  # Description as appears in ESPHome & top of webserver page
+  device_description: "Moes UFO R2 RF ESP Home"
+  # Project Name
+  project_name: "SmartPad.moes-ufo-r2-rf"
+  # Projection version denotes the release version of the yaml file, allowing checking of deployed vs latest version
+  project_version: "v1.0.0"
+  # Restore the relay (GPO switch) upon reboot to state:
+  relay_restore_mode: RESTORE_DEFAULT_ON
+  # Set the update interval for sensors
+  sensor_update_interval: 10s
+  # Current Limit in Amps
+  current_limit : "30"
+  # Define a domain for this device to use. i.e. iot.home.lan (so device will appear as smartpad-em32-smart-plug.local in DNS/DHCP logs)
+  dns_domain: ".local"
+  # Set timezone of the smart plug. Useful if the plug is in a location different to the HA server. Can be entered in unix Country/Area format (i.e. "Africa/Johannesburg")
+  timezone: ""
+  # Set the duration between the sntp service polling ntp.org servers for an update
+  sntp_update_interval: 6h
+  # Network time servers for your region, enter from lowest to highest priority. To use local servers update as per zones or countries at: https://www.ntppool.org/zone/@
+  sntp_server_1: "0.pool.ntp.org"
+  sntp_server_2: "1.pool.ntp.org"
+  sntp_server_3: "2.pool.ntp.org"  
+  # Enables faster network connections, with last connected SSID being connected to and no full scan for SSID being undertaken
+  wifi_fast_connect: "false"
+  # Define logging level: NONE, ERROR, WARN, INFO, DEBUG (Default), VERBOSE, VERY_VERBOSE
+  log_level: "INFO"
+  # Enable or disable the use of IPv6 networking on the device
+  ipv6_enable: "false"
+  #Specify Web Server Versions
+  web_server_version: "2"
+  
+########################## End of Substitutions #########################
+
+#Board Configuration
+bk72xx:
+  board: cbu
+  framework:
+    version: latest
+
+#Core Configuration
+esphome:
+  name: "${name}"
+  friendly_name: "${friendly_name}"
+  comment: "${device_description}"
+  area: "${room}"  
+  name_add_mac_suffix: true
+  min_version: 2024.6.0
+  project:
+    name: "${project_name}"
+    version: "${project_version}"
+    
+ota:
+  - platform: esphome
+    password: "08ec882fd8cd898d316278422f00b170"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  use_address: 192.168.2.142
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Moes-Ufo2 Fallback Hotspot"
+    password: "Yrz98zzZvk1i"
+
+captive_portal:
+  
+external_components:
+ - source:
+    type: local
+    path: components
+   components: [ tuya_rf ] 
+
+# Enable logging
+logger:
+web_server:
+  version: 3
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "KF92iw6xe9a5pYUCzvIBMd1OqWfCu15S/1MDEFNLvRM="
+  reboot_timeout: 0s
+
+#status led
+output:
+  platform: gpio
+  id: status
+  pin: P9
+
+#reset button, it has an external pull-down in my board
+binary_sensor:
+  - platform: gpio
+    id: reset_button
+    pin: P23
+
+#rf transmitter and receiver
+tuya_rf:
+  id: rf
+  receiver_disabled: true
+  dump: raw
+
+#for the ir leds
+remote_transmitter:
+  id: ir
+  pin: P7
+  carrier_duty_percent: 50%
+
+#for the ir receiver
+remote_receiver:
+  pin:
+   number: P8
+   inverted: true
+  dump: nec
+
+
+button:
+  - platform: factory_reset
+    id: device_Reset
+    name: "Reset to Factory Default Settings"
+    entity_category: diagnostic
+#Device Restart "Soft-Button"
+  - platform: restart
+    name: "Restart"
+    id: device_restart
+    entity_category: diagnostic
+#Safe Mode "Soft-Button"
+  - platform: safe_mode
+    name: "Safe Mode"
+    id: device_safe_mode
+    internal: false
+    entity_category: config
+  - platform: template
+    name: irtest
+    web_server:
+      sorting_weight: 1000
+    on_press:
+       - remote_transmitter.transmit_nec:
+          transmitter_id: ir
+          address: 0xFA05
+          command: 0xEB14
+          command_repeats: 1
+  - platform: template
+    name: turn off receiver
+    web_server:
+      sorting_weight: 1010
+    on_press:
+       - tuya_rf.turn_off_receiver:
+  - platform: template
+    name: turn on receiver
+    web_server:
+      sorting_weight: 1020
+    on_press:
+       - tuya_rf.turn_on_receiver:
+  - platform: template
+    name:  play/pause
+    web_server:
+      sorting_weight:  10
+    on_press:
+       - output.turn_on: status
+       - remote_transmitter.transmit_raw:
+          transmitter_id: rf
+          repeat:
+            times: 7
+            wait_time: 0s
+          #code: [6042,-1106,391,-1106,391,-391,1106,-333,1106,-391,1106,-391,1106,-333,1106,-391,1106,-391,1106,-1106,391,-1106,391,-391,1106,-1106,391,-1106,391,-391,1106,-1106,391,-391,1106,-1106,391,-391,1106,-1106,391,-1106,391,-1106,391,-391,1106,-391,1106,-1106,391,-391,1106,-391,1106,-391,1106,-1106,333,-1106]
+          code: [6027, -1093, 375, -1145, 355, -375, 1093, -406, 1094, -389, 1079, -406, 1094, -374, 1114, -386, 1094, -374, 1094, -1145, 354, -1096, 373, -406, 1094, -1145, 323, -1125, 375, -375, 1114, -1104, 375, -406, 1094, -1114, 354, -406, 1093, -1125, 
+                   344, -1145, 386, -1093, 375, -375, 1114, -355, 1093, -1125, 406, -344, 1145, -355, 1124, -344, 1125, -1114, 386, -1093]
+       - output.turn_off: status
+  - platform: template
+    name:  1
+    web_server:
+      sorting_weight:  20
+    on_press:
+       - output.turn_on: status
+       - remote_transmitter.transmit_raw:
+          transmitter_id: rf
+          repeat:
+            times: 7
+            wait_time: 0s
+          #code: [6750,-1106,391,-1106,391,-391,1106,-391,1106,-391,1106,-391,1106,-391,1106,-391,1106,-391,1106,-1106,332,-1106,391,-391,1106,-1106,391,-1106,391,-391,1106,-1106,391,-391,1106,-1106,332,-391,1106,-1106,391,-1106,391,-1106,391,-1106,391,-1106,391,-391,1106,-1106,391,-391,1106,-391,1106,-391,1106,-391]
+          code: [6744, -1115, 386, -1095, 375, -375, 1125, -348, 1099, -398, 1126, -344, 1107, -424, 1094, -344, 1126, -375, 1146, -1107, 352, -1096, 394, -345, 1144, -1075, 406, -1095, 378, -379, 1118, -1095, 375, -409, 1112, -1073, 376, -375, 1125, -1115, 
+                   354, -1094, 407, -1094, 375, -1115, 386, -1094, 375, -406, 1115, -1105, 388, -362, 1094, -376, 1115, -385, 1094, -376]
+       - output.turn_off: status
+  - platform: template
+    name:  2
+    web_server:
+      sorting_weight:  30
+    on_press:
+       - output.turn_on: status
+       - remote_transmitter.transmit_raw:
+          transmitter_id: rf
+          repeat:
+            times: 7
+            wait_time: 0s
+          #code: [6013,-1093,387,-1093,341,-387,1093,-387,1093,-387,1128,-341,1128,-387,1093,-387,1093,-387,1128,-1093,387,-1093,387,-387,1093,-1093,387,-1093,387,-387,1128,-1093,387,-387,1128,-1093,387,-387,1093,-1128,387,-1093,387,-1093,387,-1093,387,-387,1093,-387,1128,-1093,387,-387,1093,-387,1093,-387,1093,-1093]
+          code: [6061, -1095, 344, -1146, 354, -375, 1095, -406, 1129, -349, 1117, -375, 1126, -344, 1146, -354, 1126, -375, 1094, -1115, 386, -1097, 372, -375, 1129, -1100, 366, -1094, 407, -344, 1146, -1074, 409, -341, 1125, -1115, 386, -344, 1125, -1094, 
+                   407, -1115, 354, -1126, 375, -1099, 391, -354, 1126, -375, 1094, -1146, 386, -344, 1126, -375, 1094, -378, 1100, -1117]
+       - output.turn_off: status
+  - platform: template
+    name:  3
+    web_server:
+      sorting_weight:  40
+    on_press:
+       - output.turn_on: status
+       - remote_transmitter.transmit_raw:
+          transmitter_id: rf
+          repeat:
+            times: 7
+            wait_time: 0s
+          #code: [6803,-1105,379,-1105,379,-379,1105,-379,1105,-379,1105,-379,1105,-379,1105,-379,1105,-379,1105,-1105,379,-1105,379,-379,1105,-1105,379,-1105,379,-379,1105,-1105,379,-379,1105,-1105,379,-379,1105,-1105,379,-1105,379,-1105,379,-379,1105,-1105,379,-379,1105,-1105,379,-379,1105,-379,1105,-1105,379,-379]
+          code: [6768, -1079, 406, -1094, 376, -396, 1073, -406, 1095, -375, 1146, -323, 1126, -375, 1126, -344, 1161, -370, 1095, -1094, 375, -1115, 386, -344, 1125, -1095, 427, -1073, 375, -375, 1126, -1115, 354, -375, 1126, -1094, 376, -375, 1140, -1080, 
+                  375, -1094, 410, -1099, 367, -406, 1095, -1105, 364, -406, 1094, -1095, 375, -406, 1115, -355, 1125, -1095, 375, -390]
+       - output.turn_off: status
+  - platform: template
+    name:  4
+    web_server:
+      sorting_weight:  50
+    on_press:
+       - output.turn_on: status
+       - remote_transmitter.transmit_raw:
+          transmitter_id: rf
+          repeat:
+            times: 7
+            wait_time: 0s
+          #code: [6005,-1105,379,-1105,379,-379,1105,-379,1105,-379,1105,-379,1105,-379,1105,-379,1105,-379,1105,-1105,379,-1105,379,-379,1105,-1105,379,-1105,379,-379,1105,-1105,379,-379,1105,-1105,379,-379,1105,-1105,379,-1105,379,-1105,379,-379,1105,-379,1105,-379,1105,-1105,379,-379,1105,-379,1105,-1105,379,-1105]
+          code: [6034, -1115, 386, -1094, 375, -375, 1104, -400, 1091, -375, 1094, -407, 1115, -354, 1095, -406, 1094, -374, 1116, -1105, 375, -1094, 411, -385, 1080, -1095, 406, -1098, 380, -367, 1094, -1125, 376, -375, 1146, -1073, 379, -372, 1094, -1144, 
+                  357, -1094, 406, -1095, 389, -361, 1125, -376, 1094, -406, 1115, -1075, 374, -406, 1094, -386, 1084, -1094, 406, -1126]
+       - output.turn_off: status
+  - platform: template
+    name:  5
+    web_server:
+      sorting_weight:  60
+    on_press:
+       - output.turn_on: status
+       - remote_transmitter.transmit_raw:
+          transmitter_id: rf
+          repeat:
+            times: 7
+            wait_time: 0s
+          #code: [6816,-1105,379,-1105,379,-379,1105,-379,1105,-379,1105,-379,1105,-379,1105,-379,1105,-379,1105,-1105,379,-1105,379,-379,1105,-1105,379,-1105,379,-379,1105,-1105,379,-379,1105,-1105,379,-379,1105,-1105,379,-1105,379,-379,1105,-1105,379,-1105,379,-379,1105,-1105,379,-379,1105,-1105,379,-379,1105,-379]
+          code: [6784, -1094, 375, -1115, 386, -344, 1126, -375, 1135, -334, 1094, -407, 1094, -407, 1115, -354, 1126, -344, 1125, -1115, 386, -1094, 375, -375, 1126, -1108, 361, -1094, 407, -344, 1146, -1073, 407, -344, 1125, -1115, 386, -344, 1125, -1094, 
+                  422, -1100, 354, -406, 1095, -1094, 389, -1080, 407, -344, 1156, -1115, 355, -375, 1094, -1126, 375, -388, 1081, -407]
+       - output.turn_off: status
+  - platform: template
+    name:  6
+    web_server:
+      sorting_weight:  70
+    on_press:
+       - output.turn_on: status
+       - remote_transmitter.transmit_raw:
+          transmitter_id: rf
+          repeat:
+            times: 7
+            wait_time: 0s
+          #code: [5933,-1104,379,-1104,379,-379,1104,-379,1104,-379,1104,-379,1104,-379,1104,-379,1104,-379,1104,-1104,379,-1104,379,-379,1104,-1104,379,-1104,379,-379,1104,-1104,379,-379,1104,-1104,379,-379,1104,-1104,379,-1104,379,-379,1104,-1104,379,-379,1104,-379,1104,-1104,379,-379,1104,-1104,379,-379,1104,-1104]
+          code: [6034, -1115, 386, -1125, 344, -407, 1097, -386, 1080, -407, 1094, -375, 1115, -386, 1097, -372, 1094, -407, 1115, -1104, 344, -1126, 375, -396, 1074, -1094, 406, -1099, 391, -386, 1094, -1126, 344, -406, 1115, -1105, 344, -406, 1095, -1146, 
+                  323, -1106, 395, -375, 1129, -1097, 369, -375, 1126, -375, 1146, -1073, 376, -406, 1094, -1115, 355, -375, 1125, -1095]
+       - output.turn_off: status
+  - platform: template
+    name:  random
+    web_server:
+      sorting_weight:  80
+    on_press:
+       - output.turn_on: status
+       - remote_transmitter.transmit_raw:
+          transmitter_id: rf
+          repeat:
+            times: 7
+            wait_time: 0s
+          code: [6046,-1103,380,-1103,380,-380,1103,-380,1103,-380,1103,-380,1103,-380,1103,-380,1103,-380,1103,-1103,380,-1103,380,-380,1103,-1103,380,-1103,380,-380,1103,-1103,380,-380,1103,-1103,380,-380,1103,-1103,380,-1103,380,-380,1103,-380,1103,-380,1103,-380,1103,-1103,380,-380,1103,-1103,380,-1103,380,-1103]
+       - output.turn_off: status
+  - platform: template
+    name:  invert
+    web_server:
+      sorting_weight:  90
+    on_press:
+       - output.turn_on: status
+       - remote_transmitter.transmit_raw:
+          transmitter_id: rf
+          repeat:
+            times: 7
+            wait_time: 0s
+          code: [6728,-1105,333,-1105,388,-388,1105,-388,1105,-388,1105,-388,1105,-388,1105,-388,1105,-388,1105,-1105,388,-1105,388,-388,1105,-1105,388,-1105,388,-388,1105,-1105,388,-388,1105,-1105,388,-388,1105,-1105,388,-1105,388,-388,1105,-388,1105,-1105,333,-388,1105,-1105,388,-388,1105,-1105,388,-1105,388,-333]
+       - output.turn_off: status
+  - platform: template
+    name:  1h
+    web_server:
+      sorting_weight:  100
+    on_press:
+       - output.turn_on: status
+       - remote_transmitter.transmit_raw:
+          transmitter_id: rf
+          repeat:
+            times: 7
+            wait_time: 0s
+          code: [6068,-1106,390,-1106,390,-390,1106,-390,1106,-390,1106,-390,1106,-390,1106,-390,1106,-390,1106,-1106,390,-1106,332,-390,1106,-1106,332,-1106,390,-390,1106,-1106,390,-390,1106,-1106,332,-390,1106,-1106,390,-332,1106,-1106,390,-390,1106,-390,1106,-1106,390,-390,1106,-1106,332,-390,1106,-1106,390,-1106]
+       - output.turn_off: status
+  - platform: template
+    name:  2h
+    web_server:
+      sorting_weight:  110
+    on_press:
+       - output.turn_on: status
+       - remote_transmitter.transmit_raw:
+          transmitter_id: rf
+          repeat:
+            times: 7
+            wait_time: 0s
+          code: [6698,-1108,392,-1108,392,-392,1108,-392,1108,-392,1108,-392,1108,-331,1108,-392,1108,-392,1108,-1108,392,-1108,331,-392,1108,-1108,392,-1108,392,-392,1108,-1108,392,-392,1108,-1108,392,-392,1108,-1108,392,-392,1108,-392,1108,-392,1108,-1108,392,-1108,392,-392,1108,-1108,392,-1108,392,-1108,392,-331]
+       - output.turn_off: status
+  - platform: template
+    name:  4h
+    web_server:
+      sorting_weight:  120
+    on_press:
+       - output.turn_on: status
+       - remote_transmitter.transmit_raw:
+          transmitter_id: rf
+          repeat:
+            times: 7
+            wait_time: 0s
+          code: [6713,-1103,380,-1103,380,-380,1103,-380,1103,-380,1103,-380,1103,-380,1103,-380,1103,-380,1103,-1103,380,-1103,380,-380,1103,-1103,380,-1103,380,-380,1103,-1103,380,-380,1103,-1103,380,-380,1103,-1103,380,-380,1103,-380,1103,-1103,380,-1103,380,-1103,380,-380,1103,-1103,380,-1103,380,-380,1103,-380]
+       - output.turn_off: status
+  - platform: template
+    name:  8h
+    web_server:
+      sorting_weight:  130
+    on_press:
+       - output.turn_on: status
+       - remote_transmitter.transmit_raw:
+          transmitter_id: rf
+          repeat:
+            times: 7
+            wait_time: 0s
+          code: [6041,-1104,379,-1104,379,-379,1104,-379,1104,-379,1104,-379,1104,-379,1104,-379,1104,-379,1104,-1104,379,-1104,379,-379,1104,-1104,379,-1104,379,-379,1104,-1104,379,-379,1104,-1104,379,-379,1104,-1104,379,-1104,379,-379,1104,-1104,379,-379,1104,-1104,379,-379,1104,-379,1104,-1104,379,-379,1104,-1104]
+       - output.turn_off: status
+  - platform: template
+    name:  luz
+    web_server:
+      sorting_weight:  140
+    on_press:
+       - output.turn_on: status
+       - remote_transmitter.transmit_raw:
+          transmitter_id: rf
+          repeat:
+            times: 7
+            wait_time: 0s
+          code: [6756,-1105,379,-1105,379,-379,1105,-379,1105,-379,1105,-379,1105,-379,1105,-379,1105,-379,1105,-1105,379,-1105,379,-379,1105,-1105,379,-1105,379,-379,1105,-1105,379,-379,1105,-1105,379,-379,1105,-1105,379,-379,1105,-1105,379,-379,1105,-1105,379,-1105,379,-379,1105,-1105,379,-379,1105,-1105,379,-379]
+       - output.turn_off: status
+    
+
+time:
+  - platform: sntp
+    id: sntp_time
+  # Define the timezone of the device
+    timezone: "${timezone}"
+  # Change sync interval from default 5min to 6 hours (or as set in substitutions)
+    update_interval: ${sntp_update_interval}
+  # Set specific sntp servers to use
+    servers: 
+      - "${sntp_server_1}"
+      - "${sntp_server_2}"
+      - "${sntp_server_3}"    
+  # Publish the time the device was last restarted
+    on_time_sync:
+      then:
+        # Update last restart time, but only once.
+        - if:
+            condition:
+              lambda: 'return id(device_last_restart).state == "";'
+            then:
+              - text_sensor.template.publish:
+                  id: device_last_restart
+                  state: !lambda 'return id(sntp_time).now().strftime("%a %d %b %Y - %I:%M:%S %p");'
+
+#Sensor Configurations
+sensor:
+  - platform: uptime
+    name: "Uptime Sensor"
+    id: uptime_sensor
+    entity_category: diagnostic
+    internal: true
+
+  - platform: wifi_signal
+    name: "WiFi Signal dB"
+    id: wifi_signal_db
+    update_interval: 60s
+    entity_category: "diagnostic"
+    disabled_by_default: true
+
+  - platform: copy
+    source_id: wifi_signal_db
+    name: "WiFi Signal Percent"
+    id: wifi_percent
+    filters:
+      - lambda: |-
+          return (x > -50) ? 100 : 
+                 (x < -100) ? 0 : 
+                 2 * (x + 100);
+    unit_of_measurement: "Signal %"
+    entity_category: "diagnostic"
+    device_class: ""
+ 
+ #Diagnostic Data Sesnors    
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "IP Address"
+      id: wifi_ip_address
+      icon: mdi:ip-network
+      entity_category: diagnostic
+    ssid:
+      name: "Connected SSID"
+      id: wifi_connected_ssid
+      icon: mdi:wifi-strength-2
+      entity_category: diagnostic
+    mac_address:
+      name: "Mac Address"
+      id: wifi_mac_address
+      icon: mdi:network-pos
+      entity_category: diagnostic
+
+  #  Creates a sensor showing when the device was last restarted
+  - platform: template
+    name: 'Last Restart'
+    id: device_last_restart
+    icon: mdi:clock
+    entity_category: diagnostic
+  #  Creates a sensor of the uptime of the device, in formatted days, hours, minutes and seconds
+  - platform: template
+    name: "Uptime"
+    id: device_uptime
+    entity_category: diagnostic
+    lambda: |-
+      int seconds = static_cast<int>(id(uptime_sensor).state);
+      int days = seconds / 86400;
+      seconds %= 86400;
+      int hours = seconds / 3600;
+      seconds %= 3600;
+      int minutes = seconds / 60;
+      seconds %= 60;
+
+      if (days > 3650) {
+        return {"Starting up"};
+      } else if (days > 0) {
+        return {str_sprintf("%dd %dh %dm %ds", days, hours, minutes, seconds)};
+      } else if (hours > 0) {
+        return {str_sprintf("%dh %dm %ds", hours, minutes, seconds)};
+      } else if (minutes > 0) {
+        return {str_sprintf("%dm %ds", minutes, seconds)};
+      } else {
+        return {str_sprintf("%ds", seconds)};
+      }
+    icon: mdi:clock-start
