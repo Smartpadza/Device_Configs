@@ -70,6 +70,10 @@ wifi:
     ssid: "Moes-Ufo2 Fallback Hotspot"
     password: "Yrz98zzZvk1i"
 
+dashboard_import:
+  package_import_url: github://Smartpadza/Device_Configs/moes-ufo-r2-rf.yaml
+  import_full_config: false # or true
+
 captive_portal:
   
 external_components:
