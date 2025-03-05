@@ -2,7 +2,7 @@ substitutions:
   # Default name
   name: "cbi-asc"
   # Default friendly name   
-  friendly_name: "CBI ASC ESP Home"
+  friendly_name: "ASC ESP Home"
   # Allows ESP device to be automatically linked to an 'Area' in Home Assistant. Typically used for areas such as 'Lounge Room', 'Kitchen' etc  
   room: ""
   # Appends the mac Address to the device name, set to "false" to disable
@@ -10,7 +10,7 @@ substitutions:
   # Description as appears in ESPHome & top of webserver page
   device_description: "CBI ASC"
   # Project Name
-  project_name: "SmartPad.CBI-ASC"
+  project_name: "SmartPad.asc"
   # Projection version denotes the release version of the yaml file, allowing checking of deployed vs latest version
   project_version: "v1.0.0"
   # Restore the relay (GPO switch) upon reboot to state:
@@ -19,8 +19,6 @@ substitutions:
   sensor_update_interval: 10s
   # Current Limit in Amps
   current_limit : "35"
-  # Define a domain for this device to use. i.e. iot.home.lan (so device will appear as smartpad-em32-smart-plug.local in DNS/DHCP logs)
-  dns_domain: ".local"
   # Set timezone of the smart plug. Useful if the plug is in a location different to the HA server. Can be entered in unix Country/Area format (i.e. "Africa/Johannesburg")
   timezone: ""
   # Set the duration between the sntp service polling ntp.org servers for an update
@@ -166,7 +164,7 @@ wifi:
   # Allow rapid re-connection to previously connect WiFi SSID, skipping scan of all SSID
   fast_connect: "${wifi_fast_connect}"
   # Define dns domain / suffix to add to hostname
-  domain: "${dns_domain}"
+
 
 #Enable Captive Portal Fallback
 captive_portal:
