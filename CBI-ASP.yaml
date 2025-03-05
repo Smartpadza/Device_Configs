@@ -5,6 +5,8 @@ substitutions:
   friendly_name: "CBI Astute Smart Socket ESP Home"
   # Allows ESP device to be automatically linked to an 'Area' in Home Assistant. Typically used for areas such as 'Lounge Room', 'Kitchen' etc  
   room: ""
+  # Appends the mac Address to the device name, set to "false" to disable
+  add_mac_suffix: "true"
   # Description as appears in ESPHome & top of webserver page
   device_description: "CBI Astute Smart Socket ESP Home"
   # Project Name
@@ -16,7 +18,7 @@ substitutions:
   # Set the update interval for sensors
   sensor_update_interval: 10s
   # Current Limit in Amps
-  current_limit : "30"
+  current_limit : "35"
   # Define a domain for this device to use. i.e. iot.home.lan (so device will appear as smartpad-em32-smart-plug.local in DNS/DHCP logs)
   dns_domain: ".local"
   # Set timezone of the smart plug. Useful if the plug is in a location different to the HA server. Can be entered in unix Country/Area format (i.e. "Africa/Johannesburg")
@@ -60,7 +62,7 @@ esphome:
   friendly_name: "${friendly_name}"
   comment: "${device_description}"
   area: "${room}"  
-  name_add_mac_suffix: true
+  name_add_mac_suffix: "${add_mac_suffix}"
   min_version: 2024.6.0
   project:
     name: "${project_name}"
