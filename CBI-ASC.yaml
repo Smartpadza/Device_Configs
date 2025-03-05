@@ -5,6 +5,8 @@ substitutions:
   friendly_name: "CBI AStute Smart Controller ESP Home"
   # Allows ESP device to be automatically linked to an 'Area' in Home Assistant. Typically used for areas such as 'Lounge Room', 'Kitchen' etc  
   room: ""
+  # Appends the mac Address to the device name, set to "false" to disable
+  add_mac_suffix: "true"
   # Description as appears in ESPHome & top of webserver page
   device_description: "CBI AStute Smart Controller ESP Home"
   # Project Name
@@ -60,7 +62,7 @@ esphome:
   friendly_name: "${friendly_name}"
   comment: "${device_description}"
   area: "${room}"  
-  name_add_mac_suffix: true
+  name_add_mac_suffix: "${add_mac_suffix}"
   min_version: 2024.6.0
   project:
     name: "${project_name}"
