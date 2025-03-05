@@ -18,7 +18,7 @@ substitutions:
   # Set the update interval for sensors
   sensor_update_interval: 10s
   # Current Limit in Amps
-  current_limit : "30"
+  current_limit : "35"
   # Define a domain for this device to use. i.e. iot.home.lan (so device will appear as smartpad-em32-smart-plug.local in DNS/DHCP logs)
   dns_domain: ".local"
   # Set timezone of the smart plug. Useful if the plug is in a location different to the HA server. Can be entered in unix Country/Area format (i.e. "Africa/Johannesburg")
