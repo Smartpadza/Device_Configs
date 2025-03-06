@@ -14,7 +14,7 @@ substitutions:
   # Restore the relay (GPO switch) upon reboot to state:
   relay_restore_mode: RESTORE_DEFAULT_ON
   # Set the update interval for sensors
-  sensor_update_interval: 10s
+  sensor_update_interval: 15s
   # Current Limit in Amps
   current_limit : "16"
   # Define a domain for this device to use. i.e. iot.home.lan (so device will appear as smartpad-em32-smart-plug.local in DNS/DHCP logs)
@@ -66,7 +66,7 @@ esphome:
   project:
     name: "${project_name}"
     version: "${project_version}"
-    
+
   #Configuration to allow selection of Power restore Mode
   on_boot:
   - priority: 600
@@ -108,7 +108,6 @@ select:
       then:
         - lambda: |-
             id(restore_mode)=i+1;
-
 dashboard_import:
   package_import_url: github://Smartpadza/Device_Configs/smartpad-em32-smart-plug.yaml
   import_full_config: false # or true
@@ -188,8 +187,6 @@ output:
     pin:
       number: GPIO6
       inverted: true
- 
-
   #Device Status LED (Blue)
   - platform: gpio
     id: gpio_output_relay_led
@@ -252,8 +249,8 @@ number:
 
   # Add new number entity for current_multiply
   - platform: template
-    id: current_multiply_number
     name: "Current Multiplier"
+    id: current_multiply_number
     optimistic: true
     min_value: 0.1
     max_value: 5.0
@@ -275,13 +272,13 @@ sensor:
     current_resistor: ${current_resistor}  # Initial value from substitution
     voltage_divider: ${voltage_divider}    # Initial value from substitution
     model: BL0937
-    #change_mode_every: 3 
+    change_mode_every: 3 
     cf_pin: GPIO7
     cf1_pin: GPIO3
     sel_pin:
       number: GPIO5
       inverted: true
-    update_interval: 10s
+    update_interval: 15s
     voltage:
       name: "Voltage"
       id: voltage_id
@@ -304,6 +301,7 @@ sensor:
       filters:
         - throttle_average: ${sensor_update_interval}
         - lambda: if (x < 3.0) return 0.0; else return x;    #For the chip will report less than 3w power when no load is connected
+
     energy:
       name: "Energy"
       id: energy
@@ -313,7 +311,7 @@ sensor:
         - throttle: ${sensor_update_interval}
         # Multiplication factor from W to kW is 0.001
         - multiply: 0.001
- 
+
   - platform: uptime
     name: "Uptime Sensor"
     id: uptime_sensor
@@ -339,7 +337,7 @@ sensor:
     unit_of_measurement: "Signal %"
     entity_category: "diagnostic"
     device_class: ""
- 
+
 # Added total energy persistence
   - platform: total_daily_energy
     name: "Total Energy"
@@ -350,7 +348,7 @@ sensor:
     unit_of_measurement: kWh
     icon: mdi:lightning-bolt-circle
     accuracy_decimals: 3
-  
+
 #Diagnostic Data Sesnors    
 text_sensor:
   - platform: wifi_info
@@ -421,11 +419,11 @@ binary_sensor:
           - ON for at least 4s
         then:
           - button.press: device_Reset
-    
+
 #Factory Reset "Soft-Button"
 button:
   - platform: factory_reset
-    id: device_Reset
+    id: "device_Reset"
     name: "Reset to Factory Default Settings"
     entity_category: diagnostic
 #Device Restart "Soft-Button"
