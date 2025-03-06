@@ -109,6 +109,7 @@ select:
       then:
         - lambda: |-
             id(restore_mode)=i+1;
+
 dashboard_import:
   package_import_url: github://Smartpadza/Device_Configs/cbi-asp.yaml
   import_full_config: false # or true
@@ -274,11 +275,13 @@ sensor:
     current_resistor: ${current_resistor}  # Initial value from substitution
     voltage_divider: ${voltage_divider}    # Initial value from substitution
     model: BL0937
+    change_mode_every: 3
     cf_pin: PA15
     cf1_pin: PA14
     sel_pin:
       number: PA19
       inverted: true
+    update_interval: 10s
     voltage:
       name: "Voltage"
       icon: mdi:sine-wave
@@ -288,6 +291,10 @@ sensor:
       name: "Current"
       filters:
         - multiply: !lambda 'return id(current_multiply);'  # Use global variable
+      on_value_range:
+        - above: ${current_limit}
+          then:
+            - switch.turn_off: relay
     power:
       name: "Power"
       id: power_id
@@ -295,10 +302,7 @@ sensor:
       filters:
         - throttle_average: ${sensor_update_interval}
         - lambda: if (x < 3.0) return 0.0; else return x;    #For the chip will report less than 3w power when no load is connected
-      on_value_range:
-        - above: ${current_limit}
-          then:
-            - switch.turn_off: relay
+
     energy:
       name: "Energy"
       id: energy
