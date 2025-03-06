@@ -14,7 +14,7 @@ substitutions:
   # Restore the relay (GPO switch) upon reboot to state:
   relay_restore_mode: RESTORE_DEFAULT_ON
   # Set the update interval for sensors
-  sensor_update_interval: 5s
+  sensor_update_interval: 10s
   # Current Limit in Amps
   current_limit : "16"
   # Define a domain for this device to use. i.e. iot.home.lan (so device will appear as smartpad-em32-smart-plug.local in DNS/DHCP logs)
@@ -275,7 +275,7 @@ sensor:
     current_resistor: ${current_resistor}  # Initial value from substitution
     voltage_divider: ${voltage_divider}    # Initial value from substitution
     model: BL0937
-    change_mode_every: 3 
+    #change_mode_every: 3 
     cf_pin: GPIO7
     cf1_pin: GPIO3
     sel_pin:
