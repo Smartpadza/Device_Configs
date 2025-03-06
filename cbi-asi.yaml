@@ -111,7 +111,7 @@ select:
             id(restore_mode)=i+1;
 
 dashboard_import:
-  package_import_url: github://Smartpadza/Device_Configs/cbi-asc.yaml
+  package_import_url: github://Smartpadza/Device_Configs/cbi-asi.yaml
   import_full_config: false # or true
 
 globals:
