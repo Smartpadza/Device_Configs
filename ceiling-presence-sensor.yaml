@@ -1,1 +1,300 @@
+substitutions:
+  # Default name
+  name: "ceiling-presence-sensor"
+  # Default friendly name   
+  friendly_name: "SmartPad ESPHome Ceiling Presence Sensor"
+  # Allows ESP device to be automatically linked to an 'Area' in Home Assistant. Typically used for areas such as 'Lounge Room', 'Kitchen' etc  
+  room: "Room"
+  # Description as appears in ESPHome & top of webserver page
+  device_description: "SmartPad ESPHome Ceiling Presence Sensor"
+  # Project Name
+  project_name: "SmartPad.mini-ceiling-sensor"
+  # Projection version denotes the release version of the yaml file, allowing checking of deployed vs latest version
+  project_version: "v1.0.0"
+  # Set the update interval for sensors
+  sensor_update_interval: 10s
+  # Define a domain for this device to use. i.e. iot.home.lan (so device will appear as smartpad-em32-smart-plug.local in DNS/DHCP logs)
+  dns_domain: ".local"
+  # Set timezone of the smart plug. Useful if the plug is in a location different to the HA server. Can be entered in unix Country/Area format (i.e. "Africa/Johannesburg")
+  timezone: ""
+  # Set the duration between the sntp service polling ntp.org servers for an update
+  sntp_update_interval: 6h
+  # Network time servers for your region, enter from lowest to highest priority. To use local servers update as per zones or countries at: https://www.ntppool.org/zone/@
+  sntp_server_1: "0.pool.ntp.org"
+  sntp_server_2: "1.pool.ntp.org"
+  sntp_server_3: "2.pool.ntp.org"  
+  # Enables faster network connections, with last connected SSID being connected to and no full scan for SSID being undertaken
+  wifi_fast_connect: "false"
+  # Define logging level: NONE, ERROR, WARN, INFO, DEBUG (Default), VERBOSE, VERY_VERBOSE
+  log_level: "INFO"
+  # Enable or disable the use of IPv6 networking on the device
+  ipv6_enable: "false"
+  #Specify Web Server Versions
+  web_server_version: "2"
+########################## End of Substitutions #########################
+#Core Configuration
+esphome:
+  name: "${name}"
+  friendly_name: "${friendly_name}"
+  comment: "${device_description}"
+  area: "${room}"  
+  name_add_mac_suffix: true
+  min_version: 2024.6.0
+  project:
+    name: "${project_name}"
+    version: "${project_version}"
 
+
+#Board Configuration
+esp8266:
+  board: esp01_1m
+
+# Disable serial logging
+logger:
+  baud_rate: 0
+
+dashboard_import:
+  package_import_url: github://Smartpadza/Device_Configs/mini-presence-sensor.yaml
+  import_full_config: false # or true
+
+#prevent rapid changes to a component from being quickly written to the flash and wearing it out
+preferences:
+  flash_write_interval: 5min
+
+
+#Enable Home Assistant API
+api:
+#Enable OTA Updates
+ota:
+  - platform: esphome
+
+#Allow MDNS to be disabled
+mdns:
+  disabled: false
+#nable Web Server
+web_server:
+  port: 80
+  version: ${web_server_version}
+
+
+network:
+  enable_ipv6: ${ipv6_enable}
+#Wifi Configuration
+wifi:
+  # This spawns an AP with the device name and mac address with no password.
+  ap: {}
+  # Allow rapid re-connection to previously connect WiFi SSID, skipping scan of all SSID
+  fast_connect: "${wifi_fast_connect}"
+  # Define dns domain / suffix to add to hostname
+  domain: "${dns_domain}"
+
+#Enable Captive Portal Fallback
+captive_portal:
+
+
+uart:
+  rx_pin: GPIO03
+  tx_pin: GPIO01
+  baud_rate: 115200
+
+# Register the Tuya MCU connection
+tuya:
+
+sensor:
+  # Light Sensor
+  - platform: tuya
+    name: "${friendly_name} ${room} Light Intensity"
+    id: light_intensity
+    sensor_datapoint: 104
+    unit_of_measurement: "lux"
+    icon: "mdi:brightness-5"
+    device_class: "illuminance"
+    state_class: "measurement"
+  # Distance from Detected Object
+  - platform: "tuya"
+    name: "${friendly_name} ${room} Target Distance"
+    id: target_distance
+    sensor_datapoint: 9
+    unit_of_measurement: "cm"
+    icon: "mdi:eye"
+    device_class: "distance"
+    state_class: "measurement"
+# Uptime Sensor
+  - platform: uptime
+    name: "Uptime Sensor"
+    id: uptime_sensor
+    entity_category: diagnostic
+    internal: true
+# Wifi Signal Sensor
+  - platform: wifi_signal
+    name: "WiFi Signal dB"
+    id: wifi_signal_db
+    update_interval: 60s
+    entity_category: "diagnostic"
+    disabled_by_default: true
+# Wifi Signal Friendly Format
+  - platform: copy
+    source_id: wifi_signal_db
+    name: "WiFi Signal Percent"
+    id: wifi_percent
+    filters:
+      - lambda: |-
+          return (x > -50) ? 100 : 
+                 (x < -100) ? 0 : 
+                 2 * (x + 100);
+    unit_of_measurement: "Signal %"
+    entity_category: "diagnostic"
+    device_class: ""
+
+text_sensor:
+  #  Creates a sensor showing when the device was last restarted
+  - platform: template
+    name: 'Last Restart'
+    id: device_last_restart
+    icon: mdi:clock
+    entity_category: diagnostic
+  #  Creates a sensor of the uptime of the device, in formatted days, hours, minutes and seconds
+  - platform: template
+    name: "Uptime"
+    id: device_uptime
+    entity_category: diagnostic
+    lambda: |-
+      int seconds = static_cast<int>(id(uptime_sensor).state);
+      int days = seconds / 86400;
+      seconds %= 86400;
+      int hours = seconds / 3600;
+      seconds %= 3600;
+      int minutes = seconds / 60;
+      seconds %= 60;
+
+      if (days > 3650) {
+        return {"Starting up"};
+      } else if (days > 0) {
+        return {str_sprintf("%dd %dh %dm %ds", days, hours, minutes, seconds)};
+      } else if (hours > 0) {
+        return {str_sprintf("%dh %dm %ds", hours, minutes, seconds)};
+      } else if (minutes > 0) {
+        return {str_sprintf("%dm %ds", minutes, seconds)};
+      } else {
+        return {str_sprintf("%ds", seconds)};
+      }
+    icon: mdi:clock-start
+
+# Restart Buttons
+button:
+
+  - platform: factory_reset
+    id: device_Reset
+    name: "Reset to Factory Default Settings"
+    entity_category: diagnostic
+
+#Device Restart "Soft-Button"
+  - platform: restart
+    name: "Restart"
+    id: device_restart
+    entity_category: diagnostic
+
+#Safe Mode "Soft-Button"
+  - platform: safe_mode
+    name: "Safe Mode"
+    id: device_safe_mode
+    internal: false
+    entity_category: config
+
+number:
+    # Sensitivity
+  - platform: "tuya"
+    name: "${friendly_name} ${room} Sensitivity"
+    number_datapoint: 2
+    min_value: 0
+    max_value: 9
+    step: 1
+    icon: "mdi:ray-vertex"
+    # Min Detection Distance
+  - platform: "tuya"
+    name: "${friendly_name} ${room} Near Detection Distance"
+    number_datapoint: 3
+    min_value: 0
+    max_value: 2000
+    step: 1
+    mode: slider
+    unit_of_measurement: "cm"
+    icon: "mdi:signal-distance-variant"
+    # Max Detection Distance
+  - platform: "tuya"
+    name: "${friendly_name} ${room} Far Detection Distance"
+    number_datapoint: 4
+    min_value: 0
+    max_value: 6000
+    step: 1
+    mode: slider
+    unit_of_measurement: "cm"
+    icon: "mdi:signal-distance-variant"
+    # Detection Delay
+  - platform: "tuya"
+    name: "${friendly_name} ${room} Detection Delay"
+    number_datapoint: 101
+    min_value: 0
+    max_value: 100
+    step: 1
+    unit_of_measurement: "s"
+    mode: slider
+    icon: "mdi:clock"
+    # Fading Time - Cool Down Period
+  - platform: "tuya"
+    name: "${friendly_name} ${room} Fading Time"
+    number_datapoint: 102
+    min_value: 0
+    max_value: 1500
+    step: 1
+    unit_of_measurement: "s"
+    mode: slider
+    icon: "mdi:clock"
+
+select:
+    # Self Check Enum
+  - platform: "tuya"
+    name: "${friendly_name} ${room} Self Check Result"
+    icon: mdi:eye
+    enum_datapoint: 6
+    options:
+      0: Checking
+      1: Check Success
+      2: Check Failure
+      3: Others
+      4: Comm Fault
+      5: Radar Fault
+
+binary_sensor:
+    # Status
+  - platform: status
+    name: "${friendly_name} ${room} Status"
+    # Occupancy Binary Sensor
+  - platform: "tuya"
+    name: "${friendly_name} ${room} Presence State"
+    sensor_datapoint: 1
+    device_class: occupancy
+
+time:
+  - platform: sntp
+    id: sntp_time
+  # Define the timezone of the device
+    timezone: "${timezone}"
+  # Change sync interval from default 5min to 6 hours (or as set in substitutions)
+    update_interval: ${sntp_update_interval}
+  # Set specific sntp servers to use
+    servers: 
+      - "${sntp_server_1}"
+      - "${sntp_server_2}"
+      - "${sntp_server_3}"    
+  # Publish the time the device was last restarted
+    on_time_sync:
+      then:
+        # Update last restart time, but only once.
+        - if:
+            condition:
+              lambda: 'return id(device_last_restart).state == "";'
+            then:
+              - text_sensor.template.publish:
+                  id: device_last_restart
+                  state: !lambda 'return id(sntp_time).now().strftime("%a %d %b %Y - %I:%M:%S %p");'
