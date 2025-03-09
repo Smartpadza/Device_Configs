@@ -5,6 +5,8 @@ substitutions:
   friendly_name: "SmartPad ESP Home Mini Presence Sensor"
   # Allows ESP device to be automatically linked to an 'Area' in Home Assistant. Typically used for areas such as 'Lounge Room', 'Kitchen' etc  
   room: "Room"
+  # Appends the mac Address to the device name, set to "false" to disable
+  add_mac_suffix: "true"
   # Description as appears in ESPHome & top of webserver page
   device_description: "SmartPad ESP Home Mini Presence Sensor"
   # Project Name
@@ -38,7 +40,7 @@ esphome:
   friendly_name: "${friendly_name}"
   comment: "${device_description}"
   area: "${room}"  
-  name_add_mac_suffix: true
+  name_add_mac_suffix: "${add_mac_suffix}"
   min_version: 2024.6.0
   project:
     name: "${project_name}"
