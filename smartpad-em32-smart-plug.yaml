@@ -40,11 +40,11 @@ substitutions:
   #Power plug icon selection. Change to reflect the type/country of power plug in use, this will update the power plug icon shown next to the switch
   power_plug_type: "power-socket-fr"  # Options: power-socket-au | power-socket-ch | power-socket-de | power-socket-eu | power-socket-fr | power-socket-it | power-socket-jp | power-socket-uk | power-socket-us |
   #Voltage Devider Starting Value
-  voltage_divider: "1500"
+  voltage_divider: "1512"
   #current Resistor Starting Value
-  current_resistor: "0.0009"
+  current_resistor: "0.00094"
   #Currnt Multiplier Starting Value
-  current_multiply: "1.5"
+  current_multiply: "1.73"
 
 ########################## End of Substitutions #########################
 
