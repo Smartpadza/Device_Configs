@@ -42,11 +42,11 @@ substitutions:
   # Power plug icon selection. Change to reflect the type/country of powr plug in use, this will update the power plug icon shown next to the switch
   power_plug_type: "power-socket-fr"  # Options: power-socket-au | power-socket-ch | power-socket-de | power-socket-eu | power-socket-fr | power-socket-it | power-socket-jp | power-socket-uk | power-socket-us |
   #Voltage Devider Starting Value
-  voltage_divider: "1560.906"
+  voltage_divider: "1566"
   #current Resistor Starting Value
-  current_resistor: "0.0010175"
+  current_resistor: "0.000994"
   #Currnt Multiplier Starting Value
-  current_multiply: "0.4069"
+  current_multiply: "0.878"
 
 ########################## End of Substitutions #########################
 
@@ -401,6 +401,8 @@ binary_sensor:
   - platform: gpio
     pin: 
       number: GPIO13
+      mode: INPUT_PULLUP
+      inverted: true
     id: "relay_button"
     name: "Power Button"
     disabled_by_default: true
