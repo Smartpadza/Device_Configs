@@ -174,9 +174,9 @@ wifi:
 captive_portal:
 
 #WiFi Configuration
-#esp32_improv:
-#  authorizer: relay_button
-#  status_indicator: output_status_led
+esp32_improv:
+  authorizer: relay_button
+  status_indicator: output_status_led
 
 #Device LED Configurations
 light:
