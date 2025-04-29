@@ -54,6 +54,7 @@ logger:
 
 esp32:
   board: esp32dev
+  flash_size: 8MB
   framework:
     type: arduino
 
