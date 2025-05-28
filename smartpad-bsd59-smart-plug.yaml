@@ -1,6 +1,6 @@
 substitutions:
   # Default name
-  name: "smartpad-bsd59-smart-plug"
+  name: "smartpad-bsd9-smart-plug"
   # Default friendly name   
   friendly_name: "SmartPad BSD59 Smart Plug"
   # Allows ESP device to be automatically linked to an 'Area' in Home Assistant. Typically used for areas such as 'Lounge Room', 'Kitchen' etc  
