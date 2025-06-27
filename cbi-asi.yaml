@@ -400,7 +400,10 @@ text_sensor:
 #Device Physical Button
 binary_sensor:
   - platform: gpio
-    pin: PA22
+    pin:
+      number: PA22
+      mode: INPUT_PULLUP
+      inverted: true
     id: "relay_button"
     name: "Power Button"
     disabled_by_default: true
