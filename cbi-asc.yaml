@@ -2,13 +2,13 @@ substitutions:
   # Default name
   name: "cbi-smart-controller"
   # Default friendly name   
-  friendly_name: "CBI AStute Smart Controller ESP Home"
+  friendly_name: "CBI Astute Smart Controller ESPHome"
   # Allows ESP device to be automatically linked to an 'Area' in Home Assistant. Typically used for areas such as 'Lounge Room', 'Kitchen' etc  
   room: ""
   # Appends the mac Address to the device name, set to "false" to disable
   add_mac_suffix: "true"
   # Description as appears in ESPHome & top of webserver page
-  device_description: "CBI AStute Smart Controller ESP Home"
+  device_description: "CBI Astute Smart Controller ESPHome"
   # Project Name
   project_name: "SmartPad.CBI-ASC"
   # Projection version denotes the release version of the yaml file, allowing checking of deployed vs latest version
@@ -16,7 +16,7 @@ substitutions:
   # Restore the relay (GPO switch) upon reboot to state:
   relay_restore_mode: RESTORE_DEFAULT_ON
   # Set the update interval for sensors
-  sensor_update_interval: 5s
+  sensor_update_interval: 10s
   # Current Limit in Amps
   current_limit : "30"
   # Define a domain for this device to use. i.e. iot.home.lan (so device will appear as smartpad-em32-smart-plug.local in DNS/DHCP logs)
@@ -42,11 +42,11 @@ substitutions:
   # Power plug icon selection. Change to reflect the type/country of powr plug in use, this will update the power plug icon shown next to the switch
   power_plug_type: "power-socket-fr"  # Options: power-socket-au | power-socket-ch | power-socket-de | power-socket-eu | power-socket-fr | power-socket-it | power-socket-jp | power-socket-uk | power-socket-us |
   #Voltage Devider Starting Value
-  voltage_divider: "1560.906"
+  voltage_divider: "1566"
   #current Resistor Starting Value
-  current_resistor: "0.0010175"
+  current_resistor: "0.000994"
   #Currnt Multiplier Starting Value
-  current_multiply: "0.4069"
+  current_multiply: "0.878"
 
 ########################## End of Substitutions #########################
 
@@ -75,21 +75,22 @@ esphome:
       - select.set_index:
           id: power_mode
           index: !lambda |-
-                    return id(restore_mode)-1;
+                    return id(restore_mode);  // Index matches restore_mode (0, 1, 2)
       - lambda: |-
-          switch(id(restore_mode))
-          {
-          case 1:{
-                  id(relay).turn_off();
-                  break;
-                        }
-          case 2:{
-                  id(relay).turn_on();
-                  break;
-                        }
-          default:{
-                  break;
-                        }
+          int mode = id(restore_mode);
+          switch(mode) {
+            case 0:  // Always Off
+              id(relay).turn_off();
+              break;
+            case 1:  // Always On
+              id(relay).turn_on();
+              break;
+            case 2:  // Restore Previous State
+              // No action needed; switch.restore_mode handles this
+              break;
+            default:
+              id(relay).turn_off();  // Fallback to safe state
+              break;
           }
           // Apply restored values to HLW8012 sensor
           id(power_sensor).set_voltage_divider(id(voltage_divider_number).state);
@@ -101,14 +102,15 @@ select:
     id: "power_mode"
     optimistic: true
     icon: mdi:electric-switch
+    initial_option: "Restore Previous State"  # Matches restore_mode: 2
     options:
-      - Always Off       # index 0 → restore_mode 0
-      - Always On        # index 1 → restore_mode 1
-      - Restore Previous State  # index 2 → restore_mode 2
+      - "Always Off"       # index 0 → restore_mode 0
+      - "Always On"        # index 1 → restore_mode 1
+      - "Restore Previous State"  # index 2 → restore_mode 2
     on_value:
       then:
         - lambda: |-
-            id(restore_mode)=i+1;
+            id(restore_mode) = i;  
 
 dashboard_import:
   package_import_url: github://Smartpadza/Device_Configs/cbi-asc.yaml
@@ -118,7 +120,7 @@ globals:
   - id: restore_mode
     type: int
     restore_value: yes
-    initial_value: "2"
+    initial_value: "2"  # 0 = Always Off, 1 = Always On, 2 = Restore Previous State
 
   - id: total_energy
     type: float
@@ -186,14 +188,14 @@ output:
   #relay Status LED (Red)
   - platform: gpio
     pin:
-      number: PA23
+      number: PA05
       inverted: true
     id: output_status_led
 
   #Device Status LED (Blue)
   - platform: gpio
     pin:
-      number: PA05
+      number: PA23
       inverted: true
     id: gpio_output_relay_led
 
@@ -275,7 +277,7 @@ sensor:
     current_resistor: ${current_resistor}  # Initial value from substitution
     voltage_divider: ${voltage_divider}    # Initial value from substitution
     model: BL0937
-    change_mode_every: 3
+    change_mode_every: 8
     cf_pin: PA15
     cf1_pin: PA14
     sel_pin:
@@ -289,12 +291,15 @@ sensor:
         - throttle_average: ${sensor_update_interval}
     current:
       name: "Current"
+      id: current_id
       filters:
-        - multiply: !lambda 'return id(current_multiply);'  # Use global variable
+        - multiply: !lambda 'return id(current_multiply);' 
       on_value_range:
         - above: ${current_limit}
           then:
+            - delay: 5s
             - switch.turn_off: relay
+            - lambda: 'id(overload_count) += 1;'
     power:
       name: "Power"
       id: power_id
@@ -316,13 +321,14 @@ sensor:
   - platform: uptime
     name: "Uptime Sensor"
     id: uptime_sensor
+    update_interval: 1h
     entity_category: diagnostic
     internal: true
 
   - platform: wifi_signal
     name: "WiFi Signal dB"
     id: wifi_signal_db
-    update_interval: 60s
+    update_interval: 1h
     entity_category: "diagnostic"
     disabled_by_default: true
 
@@ -400,10 +406,15 @@ text_sensor:
 #Device Physical Button
 binary_sensor:
   - platform: gpio
-    pin: PA22
+    pin:
+      number: PA22
+      mode: INPUT_PULLUP
+      inverted: true
     id: "relay_button"
     name: "Power Button"
     disabled_by_default: true
+    filters:
+      - delayed_on: 50ms
     on_multi_click:
       - timing:
           - ON for at most 1s
@@ -411,23 +422,25 @@ binary_sensor:
         then:
           - switch.toggle: relay
       - timing:
-          - ON for at least 4s
+          - ON for at least 10s  # Long press for reset
         then:
-          - button.press: Reset
+          - button.press: device_reset
     
 #Factory Reset "Soft-Button"
 button:
   - platform: factory_reset
-    id: "Reset"
+    id: "device_reset"
     name: "Reset to Factory Default Settings"
     entity_category: diagnostic
 #Device Restart "Soft-Button"
   - platform: restart
     name: "Restart"
+    id: "device_restart"
     entity_category: diagnostic
 #Safe Mode "Soft-Button"
   - platform: safe_mode
     name: "Safe Mode"
+    id: "device_safe_mode"
     internal: false
     entity_category: config
 
