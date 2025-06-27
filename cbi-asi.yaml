@@ -186,14 +186,14 @@ output:
   #relay Status LED (Red)
   - platform: gpio
     pin:
-      number: PA23
+      number: PA05
       inverted: true
     id: output_status_led
 
   #Device Status LED (Blue)
   - platform: gpio
     pin:
-      number: PA05
+      number: PA23
       inverted: true
     id: gpio_output_relay_led
 
