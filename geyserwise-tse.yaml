@@ -1,16 +1,16 @@
 substitutions:
   # Default name
-  name: "geyserwise-tse"
+  name: "geyserwise-max"
   # Default friendly name   
-  friendly_name: "Geyserwise TSE ESP Home"
+  friendly_name: "Geyserwise Max ESP Home"
   # Allows ESP device to be automatically linked to an 'Area' in Home Assistant. Typically used for areas such as 'Lounge Room', 'Kitchen' etc  
   room: ""
   # Appends the mac Address to the device name, set to "false" to disable
   add_mac_suffix: "true"
   # Description as appears in ESPHome & top of webserver page
-  device_description: "Geyserwise TSE ESP Home"
+  device_description: "Geyserwise Max ESP Home"
   # Project Name
-  project_name: "SmartPad.geyserwise-tse"
+  project_name: "SmartPad.geyserwise-max"
   # Projection version denotes the release version of the yaml file, allowing checking of deployed vs latest version
   project_version: "v1.0.0"
   # Restore the relay (GPO switch) upon reboot to state:
@@ -59,7 +59,7 @@ logger:
   baud_rate: 0
 
 dashboard_import:
-  package_import_url: github://Smartpadza/Device_Configs/geyserwise-tse.yaml
+  package_import_url: github://Smartpadza/Device_Configs/geyserwise-max.yaml
   import_full_config: false # or true
 
 #prevent rapid changes to a component from being quickly written to the flash and wearing it out
@@ -112,8 +112,23 @@ sensor:
     unit_of_measurement: '°C'
 
   - platform: "tuya"
-    name: "Element Runtime"
+    name: "Solar Differential"
+    sensor_datapoint: 102
+    unit_of_measurement: '°C'
+
+  - platform: "tuya"
+    name: "Anti Freeze Temperature"
     sensor_datapoint: 107
+    unit_of_measurement: '°C'
+
+  - platform: "tuya"
+    name: "Collector Temperature Temperature"
+    sensor_datapoint: 108
+    unit_of_measurement: '°C'
+
+  - platform: "tuya"
+    name: "Element Runtime"
+    sensor_datapoint: 109
     unit_of_measurement: 'hrs'
 
   - platform: "tuya"
@@ -183,21 +198,13 @@ number:
     step: 1
     unit_of_measurement: '°C'
 
-  - platform: "tuya"
-    name: "PTC Element Temp"
-    number_datapoint: 102
-    min_value: 30
-    max_value: 85
-    step: 1
-    unit_of_measurement: '°C'
-
 switch:
   - platform: "tuya"
-    name: "Power"
+    name: "Element Power"
     switch_datapoint: 1
 
   - platform: "tuya"
-    name: "PTC Element Power"
+    name: "Pump Power"
     switch_datapoint: 101
 
 select:
@@ -210,11 +217,6 @@ select:
       1: "Normal"
 
 button:
-  - platform: restart
-    id: "restart_device"
-    name: "Restart"
-    entity_category: "diagnostic"
-
   - platform: factory_reset
     id: device_Reset
     name: "Reset to Factory Default Settings"
