@@ -1,19 +1,16 @@
 substitutions:
   # Default name
-  name: "geyserwise-max"
+  name: "ceiling-presence-sensor"
   # Default friendly name   
-  friendly_name: "Geyserwise Max ESP Home"
+  friendly_name: "SmartPad ESPHome Ceiling Presence Sensor"
   # Allows ESP device to be automatically linked to an 'Area' in Home Assistant. Typically used for areas such as 'Lounge Room', 'Kitchen' etc  
-  room: ""
-  # Appends the mac Address to the device name, set to "false" to disable
-  add_mac_suffix: "true"
+  room: "Room"
   # Description as appears in ESPHome & top of webserver page
-  device_description: "Geyserwise Max ESP Home"
+  device_description: "SmartPad ESPHome Ceiling Presence Sensor"
   # Project Name
-  project_name: "SmartPad.geyserwise-max"
+  project_name: "SmartPad.mini-ceiling-sensor"
   # Projection version denotes the release version of the yaml file, allowing checking of deployed vs latest version
-  project_version: "v1.0.1"
-  # Restore the relay (GPO switch) upon reboot to state:
+  project_version: "v1.0.0"
   # Set the update interval for sensors
   sensor_update_interval: 10s
   # Define a domain for this device to use. i.e. iot.home.lan (so device will appear as smartpad-em32-smart-plug.local in DNS/DHCP logs)
@@ -32,18 +29,16 @@ substitutions:
   log_level: "INFO"
   # Enable or disable the use of IPv6 networking on the device
   ipv6_enable: "false"
-  #Specify Web Server Versions
+  #Specify Web Server Version
   web_server_version: "2"
-  
 ########################## End of Substitutions #########################
-
 #Core Configuration
 esphome:
   name: "${name}"
   friendly_name: "${friendly_name}"
   comment: "${device_description}"
   area: "${room}"  
-  name_add_mac_suffix: "${add_mac_suffix}"
+  name_add_mac_suffix: true
   min_version: 2024.6.0
   project:
     name: "${project_name}"
@@ -59,7 +54,7 @@ logger:
   baud_rate: 0
 
 dashboard_import:
-  package_import_url: github://Smartpadza/Device_Configs/geyserwise-max.yaml
+  package_import_url: github://Smartpadza/Device_Configs/ceiling-presence-sensor.yaml
   import_full_config: false # or true
 
 #prevent rapid changes to a component from being quickly written to the flash and wearing it out
@@ -67,7 +62,6 @@ preferences:
   flash_write_interval: 5min
 
 
-# Enable Home Assistant API
 #Enable Home Assistant API
 api:
 #Enable OTA Updates
@@ -101,57 +95,44 @@ captive_portal:
 uart:
   rx_pin: GPIO03
   tx_pin: GPIO01
-  baud_rate: 9600
+  baud_rate: 115200
 
+# Register the Tuya MCU connection
 tuya:
 
 sensor:
+  # Light Sensor
+  - platform: tuya
+    name: "${friendly_name} ${room} Light Intensity"
+    id: light_intensity
+    sensor_datapoint: 104
+    unit_of_measurement: "lux"
+    icon: "mdi:brightness-5"
+    device_class: "illuminance"
+    state_class: "measurement"
+  # Distance from Detected Object
   - platform: "tuya"
-    name: "Water Temperature"
-    sensor_datapoint: 10
-    unit_of_measurement: '°C'
-
-  - platform: "tuya"
-    name: "Solar Differential"
-    sensor_datapoint: 102
-    unit_of_measurement: '°C'
-
-  - platform: "tuya"
-    name: "Anti Freeze Temperature"
-    sensor_datapoint: 107
-    unit_of_measurement: '°C'
-
-  - platform: "tuya"
-    name: "Collector Temperature Temperature"
-    sensor_datapoint: 108
-    unit_of_measurement: '°C'
-
-  - platform: "tuya"
-    name: "Element Runtime"
-    sensor_datapoint: 109
-    unit_of_measurement: 'hrs'
-
-  - platform: "tuya"
-    name: "Error Code"
-    sensor_datapoint: 20
-
-  - platform: "tuya"
-    name: "Element Status"
-    sensor_datapoint: 13
-
+    name: "${friendly_name} ${room} Target Distance"
+    id: target_distance
+    sensor_datapoint: 9
+    unit_of_measurement: "cm"
+    icon: "mdi:eye"
+    device_class: "distance"
+    state_class: "measurement"
+# Uptime Sensor
   - platform: uptime
     name: "Uptime Sensor"
     id: uptime_sensor
     entity_category: diagnostic
     internal: true
-
+# Wifi Signal Sensor
   - platform: wifi_signal
     name: "WiFi Signal dB"
     id: wifi_signal_db
     update_interval: 60s
     entity_category: "diagnostic"
     disabled_by_default: true
-
+# Wifi Signal Friendly Format
   - platform: copy
     source_id: wifi_signal_db
     name: "WiFi Signal Percent"
@@ -165,93 +146,7 @@ sensor:
     entity_category: "diagnostic"
     device_class: ""
 
-number:  
-  - platform: "tuya"
-    name: "Block 1 00:00-06:00"
-    number_datapoint: 103
-    min_value: 30
-    max_value: 65
-    step: 1
-    unit_of_measurement: '°C'
-
-  - platform: "tuya"
-    name: "Block 2 06:00-12:00"
-    number_datapoint: 104
-    min_value: 30
-    max_value: 65
-    step: 1
-    unit_of_measurement: '°C'
-
-  - platform: "tuya"
-    name: "Block 3 12:00-18:00"
-    number_datapoint: 105
-    min_value: 30
-    max_value: 65
-    step: 1
-    unit_of_measurement: '°C'
-
-  - platform: "tuya"
-    name: "Block 4 18:00-00:00"
-    number_datapoint: 106
-    min_value: 30
-    max_value: 65
-    step: 1
-    unit_of_measurement: '°C'
-
-switch:
-  - platform: "tuya"
-    name: "Element Power"
-    switch_datapoint: 1
-
-  - platform: "tuya"
-    name: "Pump Power"
-    switch_datapoint: 101
-
-select:
-  - platform: "tuya"
-    name: "Mode"
-    enum_datapoint: 2
-    optimistic: False
-    options:
-      0: "Holiday"
-      1: "Normal"
-
-button:
-  - platform: factory_reset
-    id: device_Reset
-    name: "Reset to Factory Default Settings"
-    entity_category: diagnostic
-#Device Restart "Soft-Button"
-  - platform: restart
-    name: "Restart"
-    id: device_restart
-    entity_category: diagnostic
-#Safe Mode "Soft-Button"
-  - platform: safe_mode
-    name: "Safe Mode"
-    id: device_safe_mode
-    internal: false
-    entity_category: config
-
- #Diagnostic Data Sesnors    
 text_sensor:
-  - platform: wifi_info
-    ip_address:
-      name: "IP Address"
-      id: wifi_ip_address
-      icon: mdi:ip-network
-      entity_category: diagnostic
-    ssid:
-      name: "Connected SSID"
-      id: wifi_connected_ssid
-      icon: mdi:wifi-strength-2
-      entity_category: diagnostic
-    mac_address:
-      name: "Mac Address"
-      id: wifi_mac_address
-      icon: mdi:network-pos
-      entity_category: diagnostic
-
   #  Creates a sensor showing when the device was last restarted
   - platform: template
     name: 'Last Restart'
@@ -284,6 +179,101 @@ text_sensor:
         return {str_sprintf("%ds", seconds)};
       }
     icon: mdi:clock-start
+
+# Restart Buttons
+button:
+
+  - platform: factory_reset
+    id: device_Reset
+    name: "Reset to Factory Default Settings"
+    entity_category: diagnostic
+
+#Device Restart "Soft-Button"
+  - platform: restart
+    name: "Restart"
+    id: device_restart
+    entity_category: diagnostic
+
+#Safe Mode "Soft-Button"
+  - platform: safe_mode
+    name: "Safe Mode"
+    id: device_safe_mode
+    internal: false
+    entity_category: config
+
+number:
+    # Sensitivity
+  - platform: "tuya"
+    name: "${friendly_name} ${room} Sensitivity"
+    number_datapoint: 2
+    min_value: 0
+    max_value: 9
+    step: 1
+    icon: "mdi:ray-vertex"
+    # Min Detection Distance
+  - platform: "tuya"
+    name: "${friendly_name} ${room} Near Detection Distance"
+    number_datapoint: 3
+    min_value: 0
+    max_value: 950
+    step: 1
+    mode: slider
+    unit_of_measurement: "cm"
+    icon: "mdi:signal-distance-variant"
+    # Max Detection Distance
+  - platform: "tuya"
+    name: "${friendly_name} ${room} Far Detection Distance"
+    number_datapoint: 4
+    min_value: 0
+    max_value: 950
+    step: 1
+    mode: slider
+    unit_of_measurement: "cm"
+    icon: "mdi:signal-distance-variant"
+    # Detection Delay
+  - platform: "tuya"
+    name: "${friendly_name} ${room} Detection Delay"
+    number_datapoint: 101
+    min_value: 0
+    max_value: 10
+    step: 0.1
+    unit_of_measurement: "s"
+    mode: slider
+    icon: "mdi:clock"
+    # Fading Time - Cool Down Period
+  - platform: "tuya"
+    name: "${friendly_name} ${room} Fading Time"
+    number_datapoint: 102
+    min_value: 0
+    max_value: 90
+    step: 1
+    unit_of_measurement: "s"
+    mode: slider
+    icon: "mdi:clock"
+
+select:
+    # Self Check Enum
+  - platform: "tuya"
+    name: "${friendly_name} ${room} Self Check Result"
+    icon: mdi:eye
+    enum_datapoint: 6
+    options:
+      0: Checking
+      1: Check Success
+      2: Check Failure
+      3: Others
+      4: Comm Fault
+      5: Radar Fault
+
+binary_sensor:
+    # Status
+  - platform: status
+    name: "${friendly_name} ${room} Status"
+    # Occupancy Binary Sensor
+  - platform: "tuya"
+    name: "${friendly_name} ${room} Presence State"
+    sensor_datapoint: 1
+    device_class: occupancy
 
 time:
   - platform: sntp
