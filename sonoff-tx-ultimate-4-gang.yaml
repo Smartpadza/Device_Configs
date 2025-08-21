@@ -56,7 +56,7 @@ esp32:
   board: esp32dev
   flash_size: 8MB
   framework:
-    type: arduino
+    type: esp-idf
 
 dashboard_import:
   package_import_url: github://Smartpadza/Device_Configs/sonoff-tx-ultimate-4-gang.yaml
