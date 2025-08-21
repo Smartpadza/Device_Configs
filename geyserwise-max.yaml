@@ -12,7 +12,7 @@ substitutions:
   # Project Name
   project_name: "SmartPad.geyserwise-max"
   # Projection version denotes the release version of the yaml file, allowing checking of deployed vs latest version
-  project_version: "v1.0.0"
+  project_version: "v1.0.1"
   # Restore the relay (GPO switch) upon reboot to state:
   # Set the update interval for sensors
   sensor_update_interval: 10s
@@ -217,11 +217,6 @@ select:
       1: "Normal"
 
 button:
-  - platform: restart
-    id: "restart_device"
-    name: "Restart"
-    entity_category: "diagnostic"
-
   - platform: factory_reset
     id: device_Reset
     name: "Reset to Factory Default Settings"
