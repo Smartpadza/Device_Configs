@@ -217,7 +217,7 @@ number:
     name: "${friendly_name} ${room} Near Detection Distance"
     number_datapoint: 3
     min_value: 0
-    max_value: 2000
+    max_value: 950
     step: 1
     mode: slider
     unit_of_measurement: "cm"
@@ -227,7 +227,7 @@ number:
     name: "${friendly_name} ${room} Far Detection Distance"
     number_datapoint: 4
     min_value: 0
-    max_value: 6000
+    max_value: 950
     step: 1
     mode: slider
     unit_of_measurement: "cm"
@@ -237,8 +237,8 @@ number:
     name: "${friendly_name} ${room} Detection Delay"
     number_datapoint: 101
     min_value: 0
-    max_value: 100
-    step: 1
+    max_value: 10
+    step: 0.1
     unit_of_measurement: "s"
     mode: slider
     icon: "mdi:clock"
@@ -247,7 +247,7 @@ number:
     name: "${friendly_name} ${room} Fading Time"
     number_datapoint: 102
     min_value: 0
-    max_value: 1500
+    max_value: 90
     step: 1
     unit_of_measurement: "s"
     mode: slider
