@@ -19,7 +19,7 @@ substitutions:
   # Define a domain for this device to use. i.e. iot.home.lan (so device will appear as smartpad-em32-smart-plug.local in DNS/DHCP logs)
   dns_domain: ".local"
   # Set timezone of the smart plug. Useful if the plug is in a location different to the HA server. Can be entered in unix Country/Area format (i.e. "Africa/Johannesburg")
-  timezone: ""
+  timezone: "Africa/Johannesburg"
   # Set the duration between the sntp service polling ntp.org servers for an update
   sntp_update_interval: 6h
   # Network time servers for your region, enter from lowest to highest priority. To use local servers update as per zones or countries at: https://www.ntppool.org/zone/@
