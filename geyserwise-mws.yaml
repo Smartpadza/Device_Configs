@@ -121,7 +121,7 @@ sensor:
     sensor_datapoint: 107
     unit_of_measurement: 'hrs'
 
-#Error COde Sensor
+#Error Code Sensor
   - platform: "tuya"
     name: "Error Code"
     sensor_datapoint: 20
