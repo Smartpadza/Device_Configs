@@ -319,7 +319,7 @@ text_sensor:
       icon: mdi:ip-network
       entity_category: diagnostic
 
-#Wifi COnnected SSID 
+#Wifi Connected SSID 
     ssid:
       name: "Connected SSID"
       id: wifi_connected_ssid
