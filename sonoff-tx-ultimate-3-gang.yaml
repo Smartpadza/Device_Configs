@@ -1,0 +1,103 @@
+substitutions:
+  # Default name
+  name: "sonoff-tx-ultimate-3-gang"
+  # Default friendly name   
+  friendly_name: "Sonoff TX Ultimate 3 Gang"
+  # Relay Count
+  relay_count: "3"
+  # Allows ESP device to be automatically linked to an 'Area' in Home Assistant. Typically used for areas such as 'Lounge Room', 'Kitchen' etc  
+  room: ""
+  # Appends the mac Address to the device name, set to "false" to disable
+  add_mac_suffix: "true"
+  # Description as appears in ESPHome & top of webserver page
+  device_description: "Sonoff TX Ultimate 3 Gang"
+  # Project Name
+  project_name: "SmartPad.Sonoff TX Ultimate 3 Gang"
+  # Projection version denotes the release version of the yaml file, allowing checking of deployed vs latest version
+  project_version: "v1.0.0"
+  # Define a domain for this device to use. i.e. iot.home.lan (so device will appear as smartpad-em32-smart-plug.local in DNS/DHCP logs)
+  dns_domain: ".local"
+  # Set timezone of the smart plug. Useful if the plug is in a location different to the HA server. Can be entered in unix Country/Area format (i.e. "Africa/Johannesburg")
+  timezone: "Africa/Johannesburg"
+  # Set the duration between the sntp service polling ntp.org servers for an update
+  sntp_update_interval: 6h
+  # Define logging level: NONE, ERROR, WARN, INFO, DEBUG (Default), VERBOSE, VERY_VERBOSE
+  log_level: "WARN"
+  # Network time servers for your region, enter from lowest to highest priority. To use local servers update as per zones or countries at: https://www.ntppool.org/zone/@
+  sntp_server_1: "0.pool.ntp.org"
+  sntp_server_2: "1.pool.ntp.org"
+  sntp_server_3: "2.pool.ntp.org"  
+  # Enables faster network connections, with last connected SSID being connected to and no full scan for SSID being undertaken
+  wifi_fast_connect: "false"
+  # Enable or disable the use of IPv6 networking on the device
+  ipv6_enable: "false"
+  #Specify Web Server Versions
+  web_server_version: "2"
+########################## End of Substitutions #########################
+
+esphome:
+  name: ${name}
+  name_add_mac_suffix: false
+  friendly_name: ${friendly_name}
+ # platformio_options:
+ #   board_build.partitions: /home/garth/config/TXPartitions.csv
+
+#Specify Logging level
+logger:
+#  hardware_uart: UART2
+  level: DEBUG
+  logs:
+    binary_sensor: INFO
+    light: INFO
+    script: INFO
+    switch: INFO
+    tx_ultimate_touch: INFO
+    uart_debug: INFO
+
+esp32:
+  board: esp32dev
+  flash_size: 8MB
+  framework:
+    type: esp-idf
+
+dashboard_import:
+  package_import_url: github://Smartpadza/Device_Configs/sonoff-tx-ultimate-3-gang.yaml
+  import_full_config: false # or true
+
+#Enable Home Assistant API
+api:
+#Enable OTA Updates
+ota:
+  - platform: esphome
+
+#Allow MDNS to be disabled
+mdns:
+  disabled: false
+#Enable Web Server
+web_server:
+  port: 80
+  version: ${web_server_version}
+
+network:
+  enable_ipv6: ${ipv6_enable}
+#Wifi Configuration
+wifi:
+  # This spawns an AP with the device name and mac address with no password.
+  ap: {}
+  # Allow rapid re-connection to previously connect WiFi SSID, skipping scan of all SSID
+  fast_connect: "${wifi_fast_connect}"
+  # Define dns domain / suffix to add to hostname
+  domain: "${dns_domain}"
+
+#Enable Captive Portal Fallback
+captive_portal:
+
+packages:
+  remote_package:
+    url: https://github.com/edwardtfn/TX-Ultimate-Easy
+    ref: latest  # Or you can specify a version, like `ref: v2024.12.6` or `ref: latest` to the latest non-stable
+    refresh: 5min
+    files:
+      - ESPHome/TX-Ultimate-Easy-ESPHome_core.yaml                  # Core (essential) packages
+      - ESPHome/TX-Ultimate-Easy-ESPHome_standard.yaml              # Non-essential, but recommended packages
+      # - ESPHome/TX-Ultimate-Easy-ESPHome_addon_ble_proxy.yaml     # Adds BLE proxy support
