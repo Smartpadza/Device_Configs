@@ -186,7 +186,7 @@ number:
     name: "Block 3 12:00-18:00"
     number_datapoint: 105
     min_value: 30
-    max_value: 65
+    max_value: 75
     step: 1
     unit_of_measurement: '°C'
 
