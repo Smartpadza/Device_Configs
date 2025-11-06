@@ -1,0 +1,289 @@
+substitutions:
+  # Default name
+  name: "2-channel-tactile-switch"
+  # Default friendly name   
+  friendly_name: "SmartPad 2 Channel Tactile Switch"
+  # Allows ESP device to be automatically linked to an 'Area' in Home Assistant. Typically used for areas such as 'Lounge Room', 'Kitchen' etc  
+  room: ""
+  # Appends the mac Address to the device name, set to "false" to disable
+  add_mac_suffix: "true"
+  # Description as appears in ESPHome & top of webserver page
+  device_description: "2 Channel Tactile Smart Switch"
+  # Project Name
+  project_name: "SmartPad.2 Channel Tactile Smart Switch"
+  # Projection version denotes the release version of the yaml file, allowing checking of deployed vs latest version
+  project_version: "v1.0.0"
+  # Define a domain for this device to use. i.e. iot.home.lan (so device will appear as smartpad-em32-smart-plug.local in DNS/DHCP logs)
+  dns_domain: ".local"
+  # Set timezone of the smart plug. Useful if the plug is in a location different to the HA server. Can be entered in unix Country/Area format (i.e. "Africa/Johannesburg")
+  timezone: ""
+  # Set the duration between the sntp service polling ntp.org servers for an update
+  sntp_update_interval: 6h
+  # Network time servers for your region, enter from lowest to highest priority. To use local servers update as per zones or countries at: https://www.ntppool.org/zone/@
+  sntp_server_1: "0.pool.ntp.org"
+  sntp_server_2: "1.pool.ntp.org"
+  sntp_server_3: "2.pool.ntp.org"  
+  # Enables faster network connections, with last connected SSID being connected to and no full scan for SSID being undertaken
+  wifi_fast_connect: "false"
+  # Define logging level: NONE, ERROR, WARN, INFO, DEBUG (Default), VERBOSE, VERY_VERBOSE
+  log_level: "INFO"
+  # Enable or disable the use of IPv6 networking on the device
+  ipv6_enable: "false"
+  #Specify Web Server Versions
+  web_server_version: "2"
+  # Power plug icon selection. Change to reflect the type/country of powr plug in use, this will update the power plug icon shown next to the switch
+########################## End of Substitutions #########################
+
+
+
+#Board Configuration
+esp32:
+  board: esp32-c3-devkitm-1
+  framework:
+    type: esp-idf
+
+#Core Configuration
+esphome:
+  name: "${name}"
+  friendly_name: "${friendly_name}"
+  comment: "${device_description}"
+  area: "${room}"  
+  name_add_mac_suffix: "${add_mac_suffix}"
+  min_version: 2024.6.0
+  project:
+    name: "${project_name}"
+    version: "${project_version}"
+
+dashboard_import:
+  package_import_url: github://Smartpadza/Device_Configs/2Ch_tactile.yaml
+  import_full_config: false # or true
+
+#prevent rapid changes to a component from being quickly written to the flash and wearing it out
+preferences:
+  flash_write_interval: 5min
+#Enable Home Assistant API
+api:
+#Enable OTA Updates
+ota:
+  - platform: esphome
+#Specify Logging level
+logger:
+  level: ${log_level}
+  baud_rate: 0
+#Allow MDNS to be disabled
+mdns:
+  disabled: false
+#nable Web Server
+web_server:
+  port: 80
+  version: 2
+
+network:
+  enable_ipv6: ${ipv6_enable}
+#Wifi Configuration
+wifi:
+  # This spawns an AP with the device name and mac address with no password.
+  ap: {}
+  # Allow rapid re-connection to previously connect WiFi SSID, skipping scan of all SSID
+  fast_connect: "${wifi_fast_connect}"
+  # Define dns domain / suffix to add to hostname
+  domain: "${dns_domain}"
+
+#Enable Captive Portal Fallback
+captive_portal:
+
+#WiFi Configuration
+#esp32_improv:
+#  authorizer: relay_button
+#  status_indicator: output_status_led
+
+uart:
+  rx_pin: GPIO20
+  tx_pin: GPIO21
+  baud_rate: 9600
+
+tuya:
+  time_id: sntp_time
+
+switch:
+  - platform: tuya
+    switch_datapoint: 1
+    name: Switch 1
+  - platform: tuya
+    switch_datapoint: 2
+    name: Switch 2
+  - platform: tuya
+    switch_datapoint: 13
+    name: Master Switch
+  - platform: tuya
+    switch_datapoint: 16
+    name: Backlight
+  - platform: tuya
+    switch_datapoint: 101
+    name: Child Lock
+
+select:
+  - platform: tuya
+    enum_datapoint: 14
+    name: Power On Behaviour
+    optimistic: true
+    options:
+      0: "Off"
+      1: "On"
+      2: Memory
+  - platform: tuya
+    enum_datapoint: 15
+    name: LED Mode
+    optimistic: true
+    options:
+      0: "Off"
+      1: "Switch Status"
+      2: "Static"
+  - platform: tuya
+    enum_datapoint: 103
+    name:  Relay On LED Colour
+    optimistic: true
+    options:
+      0: Red
+      1: Blue
+      2: Green
+      3: White
+      4: Yellow
+  - platform: tuya
+    enum_datapoint: 104
+    name: Relay Off LED Colour
+    optimistic: true
+    options:
+      0: "Red"
+      1: "Blue"
+      2: "Green"
+      3: "White"
+      4: "Yellow"
+
+number:
+  - platform: tuya
+    name: "Backlight Brightness"
+    number_datapoint: 102
+    min_value: 1
+    max_value: 100
+    step: 1
+    unit_of_measurement: "%"
+
+
+time:
+  - platform: sntp
+    id: sntp_time
+  # Define the timezone of the device
+    timezone: "${timezone}"
+  # Change sync interval from default 5min to 6 hours (or as set in substitutions)
+    update_interval: ${sntp_update_interval}
+  # Set specific sntp servers to use
+    servers: 
+      - "${sntp_server_1}"
+      - "${sntp_server_2}"
+      - "${sntp_server_3}"    
+  # Publish the time the device was last restarted
+    on_time_sync:
+      then:
+        # Update last restart time, but only once.
+        - if:
+            condition:
+              lambda: 'return id(device_last_restart).state == "";'
+            then:
+              - text_sensor.template.publish:
+                  id: device_last_restart
+                  state: !lambda 'return id(sntp_time).now().strftime("%a %d %b %Y - %I:%M:%S %p");'
+
+#Diagnostic Data Sesnors    
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "IP Address"
+      icon: mdi:ip-network
+      entity_category: diagnostic
+    ssid:
+      name: "Connected SSID"
+      icon: mdi:wifi-strength-2
+      entity_category: diagnostic
+    mac_address:
+      name: "Mac Address"
+      icon: mdi:network-pos
+      entity_category: diagnostic
+
+  #  Creates a sensor showing when the device was last restarted
+  - platform: template
+    name: 'Last Restart'
+    id: device_last_restart
+    icon: mdi:clock
+    entity_category: diagnostic
+  #  Creates a sensor of the uptime of the device, in formatted days, hours, minutes and seconds
+  - platform: template
+    name: "Uptime"
+    entity_category: diagnostic
+    lambda: |-
+      int seconds = static_cast<int>(id(uptime_sensor).state);
+      int days = seconds / 86400;
+      seconds %= 86400;
+      int hours = seconds / 3600;
+      seconds %= 3600;
+      int minutes = seconds / 60;
+      seconds %= 60;
+
+      if (days > 3650) {
+        return {"Starting up"};
+      } else if (days > 0) {
+        return {str_sprintf("%dd %dh %dm %ds", days, hours, minutes, seconds)};
+      } else if (hours > 0) {
+        return {str_sprintf("%dh %dm %ds", hours, minutes, seconds)};
+      } else if (minutes > 0) {
+        return {str_sprintf("%dm %ds", minutes, seconds)};
+      } else {
+        return {str_sprintf("%ds", seconds)};
+      }
+    icon: mdi:clock-start
+
+sensor:
+  - platform: uptime
+    name: "Uptime Sensor"
+    id: uptime_sensor
+    update_interval: 1h
+    entity_category: diagnostic
+    internal: true
+
+  - platform: wifi_signal
+    name: "WiFi Signal dB"
+    id: wifi_signal_db
+    update_interval: 1h
+    entity_category: "diagnostic"
+    disabled_by_default: true
+
+  - platform: copy
+    source_id: wifi_signal_db
+    name: "WiFi Signal Percent"
+    filters:
+      - lambda: |-
+          return (x > -50) ? 100 : 
+                 (x < -100) ? 0 : 
+                 2 * (x + 100);
+    unit_of_measurement: "Signal %"
+    entity_category: "diagnostic"
+    device_class: ""
+ 
+#Soft Button Configurations
+button:
+#Factory Reset "Soft-Button"
+  - platform: factory_reset
+    id: "device_Reset"
+    name: "Reset to Factory Default Settings"
+    entity_category: diagnostic
+#Device Restart "Soft-Button"
+  - platform: restart
+    id: device_restart
+    name: "Restart"
+    entity_category: diagnostic
+#Safe Mode "Soft-Button"
+  - platform: safe_mode
+    name: "Safe Mode"
+    id: device_safe_mode
+    internal: false
+    entity_category: config
