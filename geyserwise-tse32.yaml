@@ -1,0 +1,343 @@
+substitutions:
+  # Default name
+  name: "geyserwise-tse"
+  # Default friendly name   
+  friendly_name: "Geyserwise TSE ESP Home"
+  # Allows ESP device to be automatically linked to an 'Area' in Home Assistant. Typically used for areas such as 'Lounge Room', 'Kitchen' etc  
+  room: ""
+  # Appends the mac Address to the device name, set to "false" to disable
+  add_mac_suffix: "true"
+  # Description as appears in ESPHome & top of webserver page
+  device_description: "Geyserwise TSE ESP Home"
+  # Project Name
+  project_name: "SmartPad.geyserwise-tse"
+  # Projection version denotes the release version of the yaml file, allowing checking of deployed vs latest version
+  project_version: "v1.0.0"
+  # Restore the relay (GPO switch) upon reboot to state:
+  # Set the update interval for sensors
+  sensor_update_interval: 10s
+  # Define a domain for this device to use. i.e. iot.home.lan (so device will appear as smartpad-em32-smart-plug.local in DNS/DHCP logs)
+  dns_domain: ".local"
+  # Set timezone of the smart plug. Useful if the plug is in a location different to the HA server. Can be entered in unix Country/Area format (i.e. "Africa/Johannesburg")
+  timezone: "Africa/Johannesburg"
+  # Set the duration between the sntp service polling ntp.org servers for an update
+  sntp_update_interval: 6h
+  # Network time servers for your region, enter from lowest to highest priority. To use local servers update as per zones or countries at: https://www.ntppool.org/zone/@
+  sntp_server_1: "0.pool.ntp.org"
+  sntp_server_2: "1.pool.ntp.org"
+  sntp_server_3: "2.pool.ntp.org"  
+  # Enables faster network connections, with last connected SSID being connected to and no full scan for SSID being undertaken
+  wifi_fast_connect: "false"
+  # Define logging level: NONE, ERROR, WARN, INFO, DEBUG (Default), VERBOSE, VERY_VERBOSE
+  log_level: "INFO"
+  # Enable or disable the use of IPv6 networking on the device
+  ipv6_enable: "false"
+  #Specify Web Server Versions
+  web_server_version: "2"
+  
+########################## End of Substitutions #########################
+
+#Core Configuration
+esphome:
+  name: "${name}"
+  friendly_name: "${friendly_name}"
+  comment: "${device_description}"
+  area: "${room}"  
+  name_add_mac_suffix: "${add_mac_suffix}"
+  min_version: 2024.6.0
+  project:
+    name: "${project_name}"
+    version: "${project_version}"
+
+#Board Configuration
+esp32:
+  board: esp32-c3-devkitm-1
+  framework:
+    type: esp-idf
+
+# Disable serial logging
+logger:
+  baud_rate: 0
+
+#Dashboard Import URL to enable ESPHome Device Builder Adoption
+dashboard_import:
+  package_import_url: github://Smartpadza/Device_Configs/geyserwise-tse32.yaml
+  import_full_config: false # or true
+
+#Prevent rapid changes to a component from being quickly written to the flash and wearing it out
+preferences:
+  flash_write_interval: 5min
+
+
+
+#Enable Home Assistant API
+api:
+
+#Enable OTA Updates
+ota:
+  - platform: esphome
+
+#Allow MDNS to be disabled
+mdns:
+  disabled: false
+
+#Enable Web Server
+web_server:
+  port: 80
+  version: ${web_server_version}
+
+#Allow selective disabling of IPv6
+network:
+  enable_ipv6: ${ipv6_enable}
+
+#Wifi Configuration
+wifi:
+  #This spawns an AP with the device name and mac address with no password.
+  ap: {}
+  #Allow rapid re-connection to previously connect WiFi SSID, skipping scan of all SSID
+  fast_connect: "${wifi_fast_connect}"
+  #Define dns domain / suffix to add to hostname
+  domain: "${dns_domain}"
+
+#Enable Captive Portal Fallback
+captive_portal:
+
+#Uart Configuration
+uart:
+  rx_pin: GPIO20
+  tx_pin: GPIO21
+  baud_rate: 9600
+
+#Enable Tuya component
+tuya:
+
+#Sensor Configurations
+sensor:
+
+#Sensor to detect Current Geyser water temperature
+  - platform: "tuya"
+    name: "Water Temperature"
+    sensor_datapoint: 10
+    unit_of_measurement: '°C'
+
+#Sensor to collect the Element Runtime from AC Power
+  - platform: "tuya"
+    name: "Element Runtime"
+    sensor_datapoint: 107
+    unit_of_measurement: 'hrs'
+
+#Error Code Sensor
+  - platform: "tuya"
+    name: "Error Code"
+    sensor_datapoint: 20
+
+#Device Uptime Sensor
+  - platform: uptime
+    name: "Uptime Sensor"
+    id: uptime_sensor
+    entity_category: diagnostic
+    internal: true
+
+#Wifi Connection Signal Sensor
+  - platform: wifi_signal
+    name: "WiFi Signal dB"
+    id: wifi_signal_db
+    update_interval: 60s
+    entity_category: "diagnostic"
+    disabled_by_default: true
+
+#Wifi Conncetion strength converted to a perecentage
+  - platform: copy
+    source_id: wifi_signal_db
+    name: "WiFi Signal Percent"
+    id: wifi_percent
+    filters:
+      - lambda: |-
+          return (x > -50) ? 100 : 
+                 (x < -100) ? 0 : 
+                 2 * (x + 100);
+    unit_of_measurement: "Signal %"
+    entity_category: "diagnostic"
+    device_class: ""
+
+#Number entity configurations
+number:
+#Geyserwise "Block 1 Temperature setting"  
+  - platform: "tuya"
+    name: "Block 1 00:00-06:00"
+    number_datapoint: 103
+    min_value: 30
+    max_value: 75
+    step: 1
+    unit_of_measurement: '°C'
+
+#Geyserwise "Block 2 Temperature setting"
+  - platform: "tuya"
+    name: "Block 2 06:00-12:00"
+    number_datapoint: 104
+    min_value: 30
+    max_value: 75
+    step: 1
+    unit_of_measurement: '°C'
+
+#Geyserwise "Block 3 Temperature setting"
+  - platform: "tuya"
+    name: "Block 3 12:00-18:00"
+    number_datapoint: 105
+    min_value: 30
+    max_value: 75
+    step: 1
+    unit_of_measurement: '°C'
+
+#Geyserwise "Block 4 Temperature setting"
+  - platform: "tuya"
+    name: "Block 4 18:00-00:00"
+    number_datapoint: 106
+    min_value: 30
+    max_value: 75
+    step: 1
+    unit_of_measurement: '°C'
+
+#PTC Element Max Temperature setting
+  - platform: "tuya"
+    name: "PTC Element Temp"
+    number_datapoint: 102
+    min_value: 30
+    max_value: 85
+    step: 1
+    unit_of_measurement: '°C'
+
+#Switch Configurations
+switch:
+#Geyser Heating On/Off Switch
+  - platform: "tuya"
+    name: "Power"
+    switch_datapoint: 1
+
+#Element Power Switch
+  - platform: "tuya"
+    name: "Element Power"
+    switch_datapoint: 101
+
+#Selects (Enums)
+select:
+
+#Geyserwise Mode Selection
+  - platform: "tuya"
+    name: "Mode"
+    enum_datapoint: 2
+    optimistic: False
+    options:
+      0: "Holiday"
+      1: "Normal"
+
+#Soft Buttons
+button:
+#Factory Reset Button "Soft-Button"
+  - platform: factory_reset
+    id: device_Reset
+    name: "Reset to Factory Default Settings"
+    entity_category: diagnostic
+#Device Restart "Soft-Button"
+  - platform: restart
+    name: "Restart"
+    id: device_restart
+    entity_category: diagnostic
+#Safe Mode "Soft-Button"
+  - platform: safe_mode
+    name: "Safe Mode"
+    id: device_safe_mode
+    internal: false
+    entity_category: config
+
+#Diagnostic Data Sesnors    
+text_sensor:
+#Element Work State
+  - platform: tuya
+    name: "Element State"
+    id: element_state
+    sensor_datapoint: 13
+    filters:
+    - map:
+      - 1 -> On
+      - 0 -> Off
+
+#Wifi IP Address
+  - platform: wifi_info
+    ip_address:
+      name: "IP Address"
+      id: wifi_ip_address
+      icon: mdi:ip-network
+      entity_category: diagnostic
+
+#Wifi Connected SSID 
+    ssid:
+      name: "Connected SSID"
+      id: wifi_connected_ssid
+      icon: mdi:wifi-strength-2
+      entity_category: diagnostic
+
+#Wifi MAC Address
+    mac_address:
+      name: "Mac Address"
+      id: wifi_mac_address
+      icon: mdi:network-pos
+      entity_category: diagnostic
+
+#Creates a sensor showing when the device was last restarted
+  - platform: template
+    name: 'Last Restart'
+    id: device_last_restart
+    icon: mdi:clock
+    entity_category: diagnostic
+#Creates a sensor of the uptime of the device, in formatted days, hours, minutes and seconds
+  - platform: template
+    name: "Uptime"
+    id: device_uptime
+    entity_category: diagnostic
+    lambda: |-
+      int seconds = static_cast<int>(id(uptime_sensor).state);
+      int days = seconds / 86400;
+      seconds %= 86400;
+      int hours = seconds / 3600;
+      seconds %= 3600;
+      int minutes = seconds / 60;
+      seconds %= 60;
+
+      if (days > 3650) {
+        return {"Starting up"};
+      } else if (days > 0) {
+        return {str_sprintf("%dd %dh %dm %ds", days, hours, minutes, seconds)};
+      } else if (hours > 0) {
+        return {str_sprintf("%dh %dm %ds", hours, minutes, seconds)};
+      } else if (minutes > 0) {
+        return {str_sprintf("%dm %ds", minutes, seconds)};
+      } else {
+        return {str_sprintf("%ds", seconds)};
+      }
+    icon: mdi:clock-start
+
+#SNTP Time Configuration for accurate time updates
+time:
+  - platform: sntp
+    id: sntp_time
+  #Define the timezone of the device
+    timezone: "${timezone}"
+  #Change sync interval from default 5min to 6 hours (or as set in substitutions)
+    update_interval: ${sntp_update_interval}
+  #Set specific sntp servers to use
+    servers: 
+      - "${sntp_server_1}"
+      - "${sntp_server_2}"
+      - "${sntp_server_3}"    
+  #Publish the time the device was last restarted
+    on_time_sync:
+      then:
+        #Update last restart time, but only once.
+        - if:
+            condition:
+              lambda: 'return id(device_last_restart).state == "";'
+            then:
+              - text_sensor.template.publish:
+                  id: device_last_restart
+                  state: !lambda 'return id(sntp_time).now().strftime("%a %d %b %Y - %I:%M:%S %p");'
