@@ -141,9 +141,10 @@ sensor:
 
 #Switch Configurations
 switch:
-#Geyser Heating On/Off Switch
+#Toggle On/Off Switch
   - platform: "tuya"
-    name: "Door"
+    name: "Door Sensor"
+    id: door_switch
     switch_datapoint: 1
 
 #Soft Buttons
