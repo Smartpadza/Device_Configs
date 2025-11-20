@@ -2,7 +2,7 @@ substitutions:
   # Default name
   name: "1-channel-tactile-switch"
   # Default friendly name   
-  friendly_name: "SmartPad 13 Channel Tactile Switch"
+  friendly_name: "SmartPad 1 Channel Tactile Switch"
   # Allows ESP device to be automatically linked to an 'Area' in Home Assistant. Typically used for areas such as 'Lounge Room', 'Kitchen' etc  
   room: ""
   # Appends the mac Address to the device name, set to "false" to disable
