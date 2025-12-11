@@ -42,11 +42,12 @@ substitutions:
   # Power plug icon selection. Change to reflect the type/country of powr plug in use, this will update the power plug icon shown next to the switch
   power_plug_type: "power-socket-fr"  # Options: power-socket-au | power-socket-ch | power-socket-de | power-socket-eu | power-socket-fr | power-socket-it | power-socket-jp | power-socket-uk | power-socket-us |
   #Voltage Devider Starting Value
-  voltage_divider: "1566"
+  voltage_divider: "1535.36"
   #current Resistor Starting Value
-  current_resistor: "0.000994"
+  current_resistor: "0.001"
   #Currnt Multiplier Starting Value
-  current_multiply: "0.878"
+  current_multiply: "0.599"
+
 
 ########################## End of Substitutions #########################
 
@@ -113,7 +114,14 @@ select:
 dashboard_import:
   package_import_url: github://Smartpadza/Device_Configs/cbi-asc-bk.yaml
 
-
+external_components:
+  - source:
+      type: git
+      url: https://github.com/Smartpadza/ESPHome_Components/
+      ref: main  # or a specific branch/tag
+    components: [hlw8012]
+    refresh: 1d  # How often to check for updates
+      
 globals:
   - id: restore_mode
     type: int
@@ -280,8 +288,7 @@ sensor:
     cf1_pin: P26
     sel_pin:
       number: P9
-      inverted: true
-    update_interval: 10s
+    update_interval: 5s
     voltage:
       name: "Voltage"
       icon: mdi:sine-wave
