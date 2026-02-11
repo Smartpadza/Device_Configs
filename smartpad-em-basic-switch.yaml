@@ -334,6 +334,7 @@ sensor:
       id: power_id
       icon: mdi:power
       filters:
+        - multiply: -1.0
         - throttle_average: ${sensor_update_interval}
         - lambda: if (x < 3.0) return 0.0; else return x;  # Retain filter for no-load condition
     energy:
