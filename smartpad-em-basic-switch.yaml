@@ -9,7 +9,7 @@ substitutions:
   device_description: "smartpad esp32-c3 basic switch em"
   # Project Name
   project_name: "SmartPad.Energy Metering Basic Switch"
-  # Projection version denotes the release version of the yaml file, allowing checking of deployed vs latest version
+  # Project version denotes the release version of the yaml file, allowing checking of deployed vs latest version
   project_version: "v1.0.4"
   # Restore the relay (GPO switch) upon reboot to state:
   relay_restore_mode: "RESTORE_DEFAULT_ON"
@@ -17,7 +17,7 @@ substitutions:
   sensor_update_interval: 5s
   # Current Limit in Amps
   current_limit : "10"
-  # Define a domain for this device to use. i.e. iot.home.lan (so device will appear as smartpad-em32-smart-plug.local in DNS/DHCP logs)
+  # Define a domain for this device to use. i.e. iot.home.lan (so device will appear as smartpad-em-basic-switch.local in DNS/DHCP logs)
   dns_domain: ".local"
   # Set timezone of the smart plug. Useful if the plug is in a location different to the HA server. Can be entered in unix Country/Area format (i.e. "Africa/Johannesburg")
   timezone: "Africa/Johannesburg"
@@ -35,17 +35,17 @@ substitutions:
   hide_energy_sensor: "false"
   # Enable or disable the use of IPv6 networking on the device
   ipv6_enable: "false"
-  #Specify Web Server Versions
+  #Specify Web Server Version
   web_server_version: "2"
   #Power plug icon selection. Change to reflect the type/country of power plug in use, this will update the power plug icon shown next to the switch
   power_plug_type: "power-socket-fr"  # Options: power-socket-au | power-socket-ch | power-socket-de | power-socket-eu | power-socket-fr | power-socket-it | power-socket-jp | power-socket-uk | power-socket-us |
-  #Voltage Devider Starting Value
+  #Voltage Divider Starting Value
   voltage_reference : "15873.35944299"
-  #current Resistor Starting Value
+  #Current Resistor Starting Value
   current_reference: "251213.46469622"
-  #Currnt Multiplier Starting Value
+  #Current Multiplier Starting Value
   power_reference: "596.0"
-  #Currnt Multiplier Starting Value
+  #Energy Multiplier Starting Value
   energy_reference: "3304.61127328"
 
 ########################## End of Substitutions #########################
@@ -152,7 +152,7 @@ api:
 #Enable OTA Updates
 ota:
   - platform: esphome
-#Specify Logging level
+#Configure Logging level
 logger:
   level: ${log_level}
   baud_rate: 0
@@ -170,7 +170,7 @@ network:
 wifi:
   # This spawns an AP with the device name and mac address with no password.
   ap: {}
-  # Allow rapid re-connection to previously connect WiFi SSID, skipping scan of all SSID
+  # Allow rapid re-connection to previously connected WiFi SSID, skipping scan of all SSID
   fast_connect: "${wifi_fast_connect}"
   # Define dns domain / suffix to add to hostname
   domain: "${dns_domain}"
@@ -178,7 +178,6 @@ wifi:
 #Enable Captive Portal Fallback
 captive_portal:
 
-#WiFi Configuration
 #esp32_improv:
 #  authorizer: relay_button
 #  status_indicator: output_status_led
@@ -198,13 +197,13 @@ light:
   output: output_status_led
 output:
 
-  #relay Status LED (Red)
+#Device Status LED (Blue)
   - platform: gpio
     id: output_status_led
     pin:
       number: GPIO6
       inverted: true
-  #Device Status LED (Blue)
+#Relay Status LED (Red)
   - platform: gpio
     id: gpio_output_relay_led
     pin:
@@ -224,7 +223,7 @@ switch:
     on_turn_off:
       - output.turn_off: gpio_output_relay_led  # Turn off the LED when the relay is inactive
 
-#HLW8012 Power Monitoring Configuration and Calibration Configuration
+#BL9042 Power Monitoring Configuration and Calibration Configuration
 number:
   - platform: template
     id: voltage_reference_number  # Updated ID to reflect BL0942 terminology
