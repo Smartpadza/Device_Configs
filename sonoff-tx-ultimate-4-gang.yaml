@@ -4,15 +4,19 @@ substitutions:
   # Default friendly name   
   friendly_name: "Sonoff TX Ultimate 4 Gang"
   # Relay Count
-  relay_count: "4"
-  # Allows ESP device to be automatically linked to an 'Area' in Home Assistant. Typically used for areas such as 'Lounge Room', 'Kitchen' etc  
+  gang_count: 4
+  # NEW - Optional: Expose relay LEDs to Home Assistant (defaults to false)
+  expose_relays_leds_to_ha: true
+  # NEW - Required: 'EU' or 'US' (case-sensitive, uppercase only) 
+  device_format: EU
+  # Allows ESP device to be automatically linked to an 'Area' in Home Assistant. Typically used for areas such as 'Lounge Room', 'Kitchen' etc 
   room: ""
   # Appends the mac Address to the device name, set to "false" to disable
   add_mac_suffix: "true"
   # Description as appears in ESPHome & top of webserver page
   device_description: "Sonoff TX Ultimate 4 Gang"
   # Project Name
-  project_name: "SmartPad.Sonoff TX Ultimate 4 Gang"
+  project_name: "SmartPad.sonoff-tx-ultimate-4-gang"
   # Projection version denotes the release version of the yaml file, allowing checking of deployed vs latest version
   project_version: "v1.0.0"
   # Define a domain for this device to use. i.e. iot.home.lan (so device will appear as smartpad-em32-smart-plug.local in DNS/DHCP logs)
@@ -39,6 +43,8 @@ esphome:
   name: ${name}
   name_add_mac_suffix: false
   friendly_name: ${friendly_name}
+ # platformio_options:
+ #   board_build.partitions: /home/garth/config/TXPartitions.csv
 
 #Specify Logging level
 logger:
