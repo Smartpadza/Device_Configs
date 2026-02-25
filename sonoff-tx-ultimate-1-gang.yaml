@@ -4,8 +4,12 @@ substitutions:
   # Default friendly name   
   friendly_name: "Sonoff TX Ultimate 1 Gang"
   # Relay Count
-  relay_count: "1"
-  # Allows ESP device to be automatically linked to an 'Area' in Home Assistant. Typically used for areas such as 'Lounge Room', 'Kitchen' etc  
+  gang_count: 1
+  # NEW - Optional: Expose relay LEDs to Home Assistant (defaults to false)
+  expose_relays_leds_to_ha: true
+  # NEW - Required: 'EU' or 'US' (case-sensitive, uppercase only) 
+  device_format: EU
+  # Allows ESP device to be automatically linked to an 'Area' in Home Assistant. Typically used for areas such as 'Lounge Room', 'Kitchen' etc 
   room: ""
   # Appends the mac Address to the device name, set to "false" to disable
   add_mac_suffix: "true"
