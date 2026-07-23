@@ -25,7 +25,39 @@ dashboard_import:
   package_import_url: github://Smartpadza/Device_Configs/sonoff-ns-panel.yaml
   import_full_config: false # or true
 
+web_server:
+  port: 80
+  version: 2
+
+network:
+  enable_ipv6: ${ipv6_enable}
+#Wifi Configuration
+wifi:
+  # This spawns an AP with the device name and mac address with no password.
+  ap: {}
+
+#Enable Captive Portal Fallback
+captive_portal:
 # Core and optional configurations
+
+#Factory Reset "Soft-Button"
+button:
+  - platform: factory_reset
+    id: "device_reset"
+    name: "Reset to Factory Default Settings"
+    entity_category: diagnostic
+#Device Restart "Soft-Button"
+  - platform: restart
+    name: "Restart"
+    id: "device_restart"
+    entity_category: diagnostic
+#Safe Mode "Soft-Button"
+  - platform: safe_mode
+    name: "Safe Mode"
+    id: "device_safe_mode"
+    internal: false
+    entity_category: config
+
 packages:
   remote_package:
     url: https://github.com/edwardtfn/NSPanel-Easy
