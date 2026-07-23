@@ -46,11 +46,6 @@ button:
     id: "device_reset"
     name: "Reset to Factory Default Settings"
     entity_category: diagnostic
-#Device Restart "Soft-Button"
-  - platform: restart
-    name: "Restart"
-    id: "device_restart"
-    entity_category: diagnostic
 #Safe Mode "Soft-Button"
   - platform: safe_mode
     name: "Safe Mode"
