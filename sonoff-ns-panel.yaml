@@ -1,0 +1,41 @@
+substitutions:
+  # Default name
+  device_name: "nspanel1598"
+  # Default friendly name   
+  friendly_name: "NS Panel"
+  # Allows ESP device to be automatically linked to an 'Area' in Home Assistant. Typically used for areas such as 'Lounge Room', 'Kitchen' etc  
+  room: ""
+  #NS Panel Language
+  language: en      # Language code - see docs/localization.md for all supported codes
+  boot_sound: false
+  upload_tft_automatically: true
+  # Appends the mac Address to the device name, set to "false" to disable
+  # Define logging level: NONE, ERROR, WARN, INFO, DEBUG (Default), VERBOSE, VERY_VERBOSE
+  log_level: "INFO"
+  # Hide the ENERGY sensor that shows kWh consumed, but with no time period associated with it. Resets when device restarted and reflashed.
+  hide_energy_sensor: "true"
+  # Enable or disable the use of IPv6 networking on the device
+  ipv6_enable: "false"
+  #Specify Web Server Versions
+  web_server_version: "2"
+
+########################## End of Substitutions #########################
+
+dashboard_import:
+  package_import_url: github://Smartpadza/Device_Configs/sonoff-ns-panel.yaml
+  import_full_config: false # or true
+
+# Core and optional configurations
+packages:
+  remote_package:
+    url: https://github.com/edwardtfn/NSPanel-Easy
+    ref: latest
+    refresh: 300s
+    files:
+      - nspanel_esphome.yaml # Basic package
+      # Optional advanced and add-on configurations
+      # - esphome/nspanel_esphome_addon_climate_cool.yaml
+      # - esphome/nspanel_esphome_addon_climate_heat.yaml
+      # - esphome/nspanel_esphome_addon_climate_dual.yaml
+      # - esphome/nspanel_esphome_addon_cover.yaml
+      # - esphome/nspanel_esphome_addon_display_light.yaml  # Show the display as a light in Home Assistant
