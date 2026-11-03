@@ -1,0 +1,351 @@
+substitutions:
+  # Default name
+  name: "sonoff-dual-r3-esphome"
+  # Default friendly name
+  friendly_name: "Sonoff Dual R3 ESPHome"
+  # Allows ESP device to be automatically linked to an 'Area' in Home Assistant. Typically used for areas such as 'Lounge Room', 'Kitchen' etc
+  room: ""
+  # Description as appears in ESPHome & top of webserver page
+  device_description: "Sonoff Dual R3 ESPHome"
+  # Project Name
+  project_name: "SmartPad.Sonoff Dual R3 ESPHome"
+  # Projection version denotes the release version of the yaml file, allowing checking of deployed vs latest version
+  project_version: "v1.0.0"
+  # Restore the relays (GPIO switches) upon reboot to state:
+  relay_restore_mode: "RESTORE_DEFAULT_ON"
+  # Define a domain for this device to use. i.e. iot.home.lan (so device will appear as smartpad-em32-smart-plug.local in DNS/DHCP logs)
+  dns_domain: ".local"
+  # Set timezone of the device. Useful if the device is in a location different to the HA server. Can be entered in unix Country/Area format (i.e. "Africa/Johannesburg")
+  timezone: "Africa/Johannesburg"
+  # Set the duration between the sntp service polling ntp.org servers for an update
+  sntp_update_interval: 6h
+  # Network time servers for your region, enter from lowest to highest priority. To use local servers update as per zones or countries at: https://www.ntppool.org/zone/@
+  sntp_server_1: "0.pool.ntp.org"
+  sntp_server_2: "1.pool.ntp.org"
+  sntp_server_3: "2.pool.ntp.org"
+  # Enables faster network connections, with last connected SSID being connected to and no full scan for SSID being undertaken
+  wifi_fast_connect: "false"
+  # Define logging level: NONE, ERROR, WARN, INFO, DEBUG (Default), VERBOSE, VERY_VERBOSE
+  log_level: "WARN"
+  # Enable or disable the use of IPv6 networking on the device
+  ipv6_enable: "false"
+  # Specify Web Server Versions
+  web_server_version: "2"
+  # Interval at which the CSE7761 energy monitoring chip is polled
+  power_update_interval: "10s"
+  # Power plug icon selection. Change to reflect the type/country of power plug in use, this will update the icon shown next to the switches
+  power_plug_type: "power-socket-fr"  # Options: power-socket-au | power-socket-ch | power-socket-de | power-socket-eu | power-socket-fr | power-socket-it | power-socket-jp | power-socket-uk | power-socket-us |
+########################## End of Substitutions #########################
+
+# Board Configuration
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+# Core Configuration
+esphome:
+  name: "${name}"
+  friendly_name: "${friendly_name}"
+  comment: "${device_description}"
+  area: "${room}"
+  name_add_mac_suffix: true
+  min_version: 2024.6.0
+  project:
+    name: "${project_name}"
+    version: "${project_version}"
+  # Power Restore Mode for 2 Relays
+  on_boot:
+    - priority: 600
+      then:
+        - select.set_index:
+            id: power_mode_relay1
+            index: !lambda 'return id(restore_mode_relay1);'
+        - select.set_index:
+            id: power_mode_relay2
+            index: !lambda 'return id(restore_mode_relay2);'
+        - lambda: |-
+            // Relay 1
+            switch(id(restore_mode_relay1)) {
+              case 0: id(relay1).turn_off(); break;  // Always Off
+              case 1: id(relay1).turn_on(); break;   // Always On
+              case 2: break;                          // Restore Previous State (handled by switch.restore_mode)
+              default: id(relay1).turn_off(); break; // Fallback
+            }
+            // Relay 2
+            switch(id(restore_mode_relay2)) {
+              case 0: id(relay2).turn_off(); break;  // Always Off
+              case 1: id(relay2).turn_on(); break;   // Always On
+              case 2: break;                          // Restore Previous State (handled by switch.restore_mode)
+              default: id(relay2).turn_off(); break; // Fallback
+            }
+
+# Individual Power On State Selectors for Each Relay
+select:
+  - platform: template
+    name: "Relay 1 Power On State"
+    id: power_mode_relay1
+    optimistic: true
+    icon: mdi:electric-switch
+    initial_option: "Restore Previous State"
+    options:
+      - "Always Off"
+      - "Always On"
+      - "Restore Previous State"
+    on_value:
+      then:
+        - lambda: 'id(restore_mode_relay1) = i;'
+  - platform: template
+    name: "Relay 2 Power On State"
+    id: power_mode_relay2
+    optimistic: true
+    icon: mdi:electric-switch
+    initial_option: "Restore Previous State"
+    options:
+      - "Always Off"
+      - "Always On"
+      - "Restore Previous State"
+    on_value:
+      then:
+        - lambda: 'id(restore_mode_relay2) = i;'
+
+dashboard_import:
+  package_import_url: github://Smartpadza/Device_Configs/sonoff-dual-r3-esphome.yaml
+  import_full_config: false # or true
+
+globals:
+  - id: restore_mode_relay1
+    type: int
+    restore_value: yes
+    initial_value: "2"  # 0 = Always Off, 1 = Always On, 2 = Restore Previous State
+  - id: restore_mode_relay2
+    type: int
+    restore_value: yes
+    initial_value: "2"  # 0 = Always Off, 1 = Always On, 2 = Restore Previous State
+
+preferences:
+  flash_write_interval: 5min
+
+# Specify Logging level
+logger:
+  level: ${log_level}
+  baud_rate: 0
+
+# Enable Home Assistant API
+api:
+
+# Allow Over-The-Air updates
+ota:
+  - platform: esphome
+
+# Enable Web Server
+web_server:
+  port: 80
+  version: ${web_server_version}
+
+network:
+  enable_ipv6: ${ipv6_enable}
+
+# Wifi Configuration
+wifi:
+  # This spawns an AP with the device name and mac address with no password.
+  ap: {}
+  # Allow rapid re-connection to previously connect WiFi SSID, skipping scan of all SSID
+  fast_connect: "${wifi_fast_connect}"
+  # Define dns domain / suffix to add to hostname
+  domain: "${dns_domain}"
+
+# Enable Captive Portal Fallback
+captive_portal:
+
+# Serial link to the CSE7761 energy monitoring chip
+uart:
+  tx_pin: GPIO25
+  rx_pin: GPIO26
+  baud_rate: 38400
+  parity: EVEN
+  stop_bits: 1
+
+# Device LED Configuration
+light:
+  - platform: status_led
+    id: status
+    pin:
+      number: GPIO13  # Blue LED as status LED
+      inverted: true  # HIGH = off, LOW = on
+
+# Relays
+switch:
+  - platform: gpio
+    pin: GPIO27
+    id: relay1
+    name: "Relay 1"
+    device_class: outlet
+    icon: "mdi:${power_plug_type}"
+    restore_mode: ${relay_restore_mode}
+
+  - platform: gpio
+    pin: GPIO14
+    id: relay2
+    name: "Relay 2"
+    device_class: outlet
+    icon: "mdi:${power_plug_type}"
+    restore_mode: ${relay_restore_mode}
+
+# Physical Button and External Switch Inputs
+binary_sensor:
+  # On-board push button
+  - platform: gpio
+    pin:
+      number: GPIO0
+      mode: INPUT_PULLUP
+      inverted: true  # HIGH = off, LOW = on
+    id: device_button
+    internal: true
+    name: "Button"
+    filters:
+      - delayed_on: 50ms
+    on_multi_click:
+      - timing:
+          - ON for at most 1s
+          - OFF for at least 0.2s
+        then:
+          - switch.toggle: relay1
+      - timing:
+          - ON for at least 10s  # Long press for factory reset
+        then:
+          - button.press: device_Reset
+
+  # External switch input S1 - any change of switch position toggles Relay 1
+  - platform: gpio
+    pin:
+      number: GPIO32
+      mode: INPUT_PULLUP
+      inverted: true
+    id: switch_input_1
+    name: "Switch Input 1"
+    entity_category: diagnostic
+    filters:
+      - delayed_on_off: 50ms
+    on_state:
+      then:
+        - switch.toggle: relay1
+
+  # External switch input S2 - any change of switch position toggles Relay 2
+  - platform: gpio
+    pin:
+      number: GPIO33
+      mode: INPUT_PULLUP
+      inverted: true
+    id: switch_input_2
+    name: "Switch Input 2"
+    entity_category: diagnostic
+    filters:
+      - delayed_on_off: 50ms
+    on_state:
+      then:
+        - switch.toggle: relay2
+
+# Buttons for Reset, Restart, Safe Mode
+button:
+  - platform: factory_reset
+    id: device_Reset
+    name: "Reset to Factory Default Settings"
+    entity_category: diagnostic
+  - platform: restart
+    name: "Restart"
+    id: device_restart
+    entity_category: diagnostic
+  - platform: safe_mode
+    name: "Safe Mode"
+    id: device_safe_mode
+    entity_category: config
+
+# Time Configuration
+time:
+  - platform: sntp
+    id: sntp_time
+    timezone: "${timezone}"
+    update_interval: ${sntp_update_interval}
+    servers:
+      - "${sntp_server_1}"
+      - "${sntp_server_2}"
+      - "${sntp_server_3}"
+    on_time_sync:
+      then:
+        - if:
+            condition:
+              lambda: 'return id(device_last_restart).state == "";'
+            then:
+              - text_sensor.template.publish:
+                  id: device_last_restart
+                  state: !lambda 'return id(sntp_time).now().strftime("%a %d %b %Y - %I:%M:%S %p");'
+
+# Energy Monitoring and Diagnostic Sensors
+sensor:
+  - platform: cse7761
+    update_interval: ${power_update_interval}
+    voltage:
+      name: "Voltage"
+    current_1:
+      name: "Current 1"
+    current_2:
+      name: "Current 2"
+    active_power_1:
+      name: "Power 1"
+    active_power_2:
+      name: "Power 2"
+
+  - platform: uptime
+    name: "Uptime Sensor"
+    id: uptime_sensor
+    update_interval: 1h
+    entity_category: diagnostic
+    internal: true
+  - platform: wifi_signal
+    name: "WiFi Signal dB"
+    id: wifi_signal_db
+    update_interval: 1h
+    entity_category: "diagnostic"
+    disabled_by_default: true
+  - platform: copy
+    source_id: wifi_signal_db
+    name: "WiFi Signal Percent"
+    filters:
+      - lambda: 'return (x > -50) ? 100 : (x < -100) ? 0 : 2 * (x + 100);'
+    unit_of_measurement: "Signal %"
+    entity_category: "diagnostic"
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "IP Address"
+      entity_category: diagnostic
+    ssid:
+      name: "Connected SSID"
+      entity_category: diagnostic
+    mac_address:
+      name: "Mac Address"
+      entity_category: diagnostic
+  - platform: template
+    name: "Last Restart"
+    id: device_last_restart
+    entity_category: diagnostic
+  - platform: template
+    name: "Uptime"
+    id: device_uptime
+    entity_category: diagnostic
+    lambda: |-
+      int seconds = static_cast<int>(id(uptime_sensor).state);
+      int days = seconds / 86400;
+      seconds %= 86400;
+      int hours = seconds / 3600;
+      seconds %= 3600;
+      int minutes = seconds / 60;
+      seconds %= 60;
+      if (days > 3650) return {"Starting up"};
+      else if (days > 0) return {str_sprintf("%dd %dh %dm %ds", days, hours, minutes, seconds)};
+      else if (hours > 0) return {str_sprintf("%dh %dm %ds", hours, minutes, seconds)};
+      else if (minutes > 0) return {str_sprintf("%dm %ds", minutes, seconds)};
+      else return {str_sprintf("%ds", seconds)};
+    icon: mdi:clock-start
